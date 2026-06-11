@@ -170,7 +170,7 @@ export default function Login() {
                     {/* Footer Links */}
                     <div className="text-center mt-6">
                         <a
-                            href="#"
+                            href="/forgot-password"
                             className="text-cyan-700 text-sm hover:underline"
                         >
                             Forgot Password?
