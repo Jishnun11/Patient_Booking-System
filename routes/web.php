@@ -4,6 +4,7 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\SuperAdminController;
 
 Route::get('/', function () {
     return Inertia::render('Home');
@@ -30,3 +31,11 @@ Route::get('/verify-otp', [ForgotPasswordController::class, 'verifyOtpPage']);
 Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOtp']);
 Route::get('/reset-password', [ForgotPasswordController::class, 'resetPasswordPage']);
 Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
+
+// Super Admin routes
+Route::middleware(['auth', 'role:super_admin'])->prefix('super-admin')->group(function () {
+    Route::get('/dashboard', [SuperAdminController::class, 'dashboard'])->name('super-admin.dashboard');
+    Route::post('/doctors', [SuperAdminController::class, 'storeDoctor'])->name('super-admin.doctors.store');
+    Route::post('/receptionists', [SuperAdminController::class, 'storeReceptionist'])->name('super-admin.receptionists.store');
+    Route::delete('/users/{user}', [SuperAdminController::class, 'destroyUser'])->name('super-admin.users.destroy');
+});
