@@ -32,6 +32,11 @@ Route::post('/verify-otp', [ForgotPasswordController::class, 'verifyOtp']);
 Route::get('/reset-password', [ForgotPasswordController::class, 'resetPasswordPage']);
 Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
 
+// Add this after the Super Admin routes group or before it
+Route::middleware(['auth'])->group(function () {
+    Route::get('/change-password', [App\Http\Controllers\Auth\PasswordController::class, 'showChangePasswordForm'])->name('password.change');
+    Route::post('/change-password', [App\Http\Controllers\Auth\PasswordController::class, 'updatePassword'])->name('password.update');
+});
 // Super Admin routes
 Route::middleware(['auth', 'role:super_admin'])->prefix('super-admin')->group(function () {
     Route::get('/dashboard', [SuperAdminController::class, 'dashboard'])->name('super-admin.dashboard');
