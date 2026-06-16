@@ -44,3 +44,17 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('super-admin')->group(fu
     Route::post('/receptionists', [SuperAdminController::class, 'storeReceptionist'])->name('super-admin.receptionists.store');
     Route::delete('/users/{user}', [SuperAdminController::class, 'destroyUser'])->name('super-admin.users.destroy');
 });
+
+// Doctor routes
+Route::middleware(['auth', 'role:doctor'])->prefix('doctor')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\DoctorController::class, 'dashboard'])->name('doctor.dashboard');
+});
+
+// Receptionist routes
+Route::middleware(['auth', 'role:receptionist'])->prefix('receptionist')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\ReceptionistController::class, 'dashboard'])->name('receptionist.dashboard');
+    Route::post('/patients', [App\Http\Controllers\ReceptionistController::class, 'storePatient']);
+    Route::post('/appointments', [App\Http\Controllers\ReceptionistController::class, 'storeAppointment']);
+    Route::put('/appointments/{id}', [App\Http\Controllers\ReceptionistController::class, 'updateAppointmentStatus']);
+    Route::delete('/appointments/{id}', [App\Http\Controllers\ReceptionistController::class, 'destroyAppointment']);
+});
