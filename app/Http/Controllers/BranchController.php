@@ -29,7 +29,11 @@ class BranchController extends Controller
                          ->orderBy('created_at', 'desc')
                          ->get();
         
-        return response()->json($branches);
+        // return response()->json($branches);
+            return Inertia::render('Branch/Index', [
+            'branches' => $branches
+        ]);
+
     }
 
     public function store(Request $request)
