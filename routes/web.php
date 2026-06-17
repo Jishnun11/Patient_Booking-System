@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\SuperAdminController;
+use App\Http\Controllers\BranchController; 
 
 Route::get('/', function () {
     return Inertia::render('Home');
@@ -37,12 +38,21 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/change-password', [App\Http\Controllers\Auth\PasswordController::class, 'showChangePasswordForm'])->name('password.change');
     Route::post('/change-password', [App\Http\Controllers\Auth\PasswordController::class, 'updatePassword'])->name('password.update');
 });
+
 // Super Admin routes
 Route::middleware(['auth', 'role:super_admin'])->prefix('super-admin')->group(function () {
     Route::get('/dashboard', [SuperAdminController::class, 'dashboard'])->name('super-admin.dashboard');
     Route::post('/doctors', [SuperAdminController::class, 'storeDoctor'])->name('super-admin.doctors.store');
     Route::post('/receptionists', [SuperAdminController::class, 'storeReceptionist'])->name('super-admin.receptionists.store');
     Route::delete('/users/{user}', [SuperAdminController::class, 'destroyUser'])->name('super-admin.users.destroy');
+
+        // Branch routes
+    Route::get('/branches', [BranchController::class, 'index'])->name('super-admin.branches.index');
+    Route::get('/branches/search', [BranchController::class, 'search'])->name('super-admin.branches.search');
+    Route::post('/branches', [BranchController::class, 'store'])->name('super-admin.branches.store');
+    Route::put('/branches/{branch}', [BranchController::class, 'update'])->name('super-admin.branches.update');
+    Route::delete('/branches/{branch}', [BranchController::class, 'destroy'])->name('super-admin.branches.destroy');
+    Route::post('/branches/{branch}/toggle-status', [BranchController::class, 'toggleStatus'])->name('super-admin.branches.toggle-status');
 });
 
 // Doctor routes
