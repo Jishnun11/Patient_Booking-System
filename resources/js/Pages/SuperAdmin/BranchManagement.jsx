@@ -28,6 +28,19 @@ export default function BranchManagement({ branches, departments }) {
         }
     }, [formData]);
 
+     // DEBUGGING: Log branches and departments data
+    useEffect(() => {
+        console.log('Branches data:', branches);
+        console.log('Departments data:', departments);
+        
+        // Check if any branch has departments
+        if (branches && branches.length > 0) {
+            branches.forEach(branch => {
+                console.log(`Branch "${branch.branch_name}" departments:`, branch.departments);
+            });
+        }
+    }, [branches, departments]);
+
     // Client-side validation functions - Only required fields
     const validateBranchName = (name) => {
         if (!name) return "Branch name is required";
@@ -84,6 +97,7 @@ export default function BranchManagement({ branches, departments }) {
     };
 
     const handleDepartmentChange = (e) => {
+        // Get selected options as array of integers
         const selectedOptions = Array.from(e.target.selectedOptions, option => parseInt(option.value));
         setFormData({
             ...formData,
@@ -131,6 +145,14 @@ export default function BranchManagement({ branches, departments }) {
     };
 
     const handleEdit = (branch) => {
+        console.log('Editing branch:', branch); // Debug log
+        console.log('Departments:', branch.departments); // Debug log
+        
+        // Get department IDs from the branch's departments
+        const departmentIds = branch.departments ? branch.departments.map(d => d.id) : [];
+        
+        console.log('Department IDs:', departmentIds); // Debug log
+        
         setFormData({
             branch_name: branch.branch_name,
             phone: branch.phone || "",
@@ -140,7 +162,7 @@ export default function BranchManagement({ branches, departments }) {
             state: branch.state || "",
             pincode: branch.pincode || "",
             is_active: branch.is_active,
-            departments: branch.departments ? branch.departments.map(d => d.id) : [],
+            departments: departmentIds,
         });
         setIsEditing(true);
         setEditingId(branch.id);
@@ -362,23 +384,24 @@ export default function BranchManagement({ branches, departments }) {
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Departments
+                                    Departments <span className="text-gray-500 text-xs">(Hold Ctrl/Cmd to select multiple)</span>
                                 </label>
                                 <select
                                     name="departments"
                                     multiple
                                     value={formData.departments}
                                     onChange={handleDepartmentChange}
-                                    className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent h-[42px] overflow-y-auto"
+                                    className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent min-h-[80px]"
+                                    size={4}
                                 >
                                     {departments.map((dept) => (
                                         <option key={dept.id} value={dept.id}>
-                                            {dept.name}
+                                            {dept.department_name}
                                         </option>
                                     ))}
                                 </select>
                                 <p className="text-gray-500 text-xs mt-1">
-                                    Hold Ctrl/Cmd to select multiple departments
+                                    Selected: {formData.departments.length} department(s)
                                 </p>
                             </div>
 
@@ -479,7 +502,7 @@ export default function BranchManagement({ branches, departments }) {
                                                     <div className="flex flex-wrap gap-1">
                                                         {branch.departments.map((dept) => (
                                                             <span key={dept.id} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                                                                {dept.name}
+                                                                {dept.department_name}
                                                             </span>
                                                         ))}
                                                     </div>
