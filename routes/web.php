@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\SuperAdminController;
 use App\Http\Controllers\BranchController; 
+use App\Http\Controllers\DepartmentController;
 
 Route::get('/', function () {
     return Inertia::render('Home');
@@ -53,6 +54,15 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('super-admin')->group(fu
     Route::put('/branches/{branch}', [BranchController::class, 'update'])->name('super-admin.branches.update');
     Route::delete('/branches/{branch}', [BranchController::class, 'destroy'])->name('super-admin.branches.destroy');
     Route::post('/branches/{branch}/toggle-status', [BranchController::class, 'toggleStatus'])->name('super-admin.branches.toggle-status');
+
+        // Department routes - ADD THESE
+    Route::get('/departments', [DepartmentController::class, 'index'])->name('super-admin.departments.index');
+    Route::get('/departments/search', [DepartmentController::class, 'search'])->name('super-admin.departments.search');
+    Route::post('/departments', [DepartmentController::class, 'store'])->name('super-admin.departments.store');
+    Route::put('/departments/{department}', [DepartmentController::class, 'update'])->name('super-admin.departments.update');
+    Route::delete('/departments/{department}', [DepartmentController::class, 'destroy'])->name('super-admin.departments.destroy');
+    Route::post('/departments/{department}/toggle-status', [DepartmentController::class, 'toggleStatus'])->name('super-admin.departments.toggle-status');
+
 });
 
 // Doctor routes

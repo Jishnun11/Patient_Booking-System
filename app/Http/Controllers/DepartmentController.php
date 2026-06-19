@@ -21,6 +21,16 @@ class DepartmentController extends Controller
         ]);
     }
 
+    // public function search(Request $request)
+    // {
+    //     $search = $request->input('search');
+    //     $departments = Department::with('branches')
+    //                             ->search($search)
+    //                             ->orderBy('created_at', 'desc')
+    //                             ->get();
+        
+    //     return response()->json($departments);
+    // }
     public function search(Request $request)
     {
         $search = $request->input('search');
@@ -29,7 +39,12 @@ class DepartmentController extends Controller
                                 ->orderBy('created_at', 'desc')
                                 ->get();
         
-        return response()->json($departments);
+        $branches = Branch::where('is_active', true)->get();
+        
+        return Inertia::render('SuperAdmin/Departments', [
+            'departments' => $departments,
+            'branches' => $branches,
+        ]);
     }
 
     public function store(Request $request)
@@ -87,9 +102,9 @@ class DepartmentController extends Controller
     public function destroy(Department $department)
     {
         // Check if department has related records
-        if ($department->users()->count() > 0) {
-            return redirect()->back()->with('error', 'Cannot delete department with associated users!');
-        }
+        // if ($department->users()->count() > 0) {
+        //     return redirect()->back()->with('error', 'Cannot delete department with associated users!');
+        // }
 
         // Detach all branches first
         $department->branches()->detach();
