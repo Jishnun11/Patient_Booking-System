@@ -1,6 +1,7 @@
 import { router, usePage } from "@inertiajs/react";
 import { useState, useEffect } from "react";
 import BranchManagement from "./BranchManagement";
+import DepartmentManagement from "./DepartmentManagement"; 
 
 export default function Dashboard({ doctors, receptionists, branches, departments }) {
     const { flash, errors: serverErrors, auth } = usePage().props;
@@ -247,6 +248,23 @@ export default function Dashboard({ doctors, receptionists, branches, department
                             }`}
                         >
                             Branch Management
+                        </button>
+                    </li>
+
+                    {/* Add Department Management menu item */}
+                    <li>
+                        <button
+                            onClick={() => {
+                                setActiveMenu("departments");
+                                setValidationErrors({});
+                            }}
+                            className={`w-full text-left px-5 py-3 hover:bg-slate-700 ${
+                                activeMenu === "departments"
+                                    ? "bg-slate-700"
+                                    : ""
+                            }`}
+                        >
+                            Department Management
                         </button>
                     </li>
                 </ul>
@@ -662,6 +680,14 @@ export default function Dashboard({ doctors, receptionists, branches, department
                         <BranchManagement 
                             branches={branches || []} 
                             departments={departments || []} 
+                        />
+                    )}
+
+                    {/* Department Management */}
+                    {activeMenu === "departments" && (
+                        <DepartmentManagement 
+                            departments={departments || []} 
+                            branches={branches || []} 
                         />
                     )}
                 </main>
