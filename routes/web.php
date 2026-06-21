@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\SuperAdminController;
 use App\Http\Controllers\BranchController; 
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\ReceptionistController;
 
 Route::get('/', function () {
     return Inertia::render('Home');
@@ -63,18 +64,16 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('super-admin')->group(fu
     Route::delete('/departments/{department}', [DepartmentController::class, 'destroy'])->name('super-admin.departments.destroy');
     Route::post('/departments/{department}/toggle-status', [DepartmentController::class, 'toggleStatus'])->name('super-admin.departments.toggle-status');
 
+    // Receptionist Management Routes
+    Route::get('/receptionists', [ReceptionistController::class, 'index'])->name('receptionists.index');
+    Route::post('/receptionists', [ReceptionistController::class, 'store'])->name('receptionists.store');
+    Route::put('/receptionists/{receptionist}', [ReceptionistController::class, 'update'])->name('receptionists.update');
+    Route::delete('/receptionists/{receptionist}', [ReceptionistController::class, 'destroy'])->name('receptionists.destroy');
+    Route::patch('/receptionists/{receptionist}/toggle-status', [ReceptionistController::class, 'toggleStatus'])->name('receptionists.toggle-status');
+
 });
 
 // Doctor routes
 Route::middleware(['auth', 'role:doctor'])->prefix('doctor')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\DoctorController::class, 'dashboard'])->name('doctor.dashboard');
-});
-
-// Receptionist routes
-Route::middleware(['auth', 'role:receptionist'])->prefix('receptionist')->group(function () {
-    Route::get('/dashboard', [App\Http\Controllers\ReceptionistController::class, 'dashboard'])->name('receptionist.dashboard');
-    Route::post('/patients', [App\Http\Controllers\ReceptionistController::class, 'storePatient']);
-    Route::post('/appointments', [App\Http\Controllers\ReceptionistController::class, 'storeAppointment']);
-    Route::put('/appointments/{id}', [App\Http\Controllers\ReceptionistController::class, 'updateAppointmentStatus']);
-    Route::delete('/appointments/{id}', [App\Http\Controllers\ReceptionistController::class, 'destroyAppointment']);
 });

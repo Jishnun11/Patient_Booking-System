@@ -47,24 +47,7 @@ class SuperAdminController extends Controller
         return redirect()->back()->with('success', 'Doctor added successfully!');
     }
 
-    public function storeReceptionist(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6',
-            'phone' => 'nullable|string|max:20',
-        ]);
 
-        User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'role' => User::ROLE_RECEPTIONIST,
-        ]);
-
-        return redirect()->back()->with('success', 'Receptionist added successfully!');
-    }
 
     public function destroyUser(User $user)
     {

@@ -2,8 +2,9 @@ import { router, usePage } from "@inertiajs/react";
 import { useState, useEffect } from "react";
 import BranchManagement from "./BranchManagement";
 import DepartmentManagement from "./DepartmentManagement"; 
+import ReceptionistManagement from "./ReceptionistManagement";
 
-export default function Dashboard({ doctors, receptionists, branches, departments }) {
+export default function Dashboard({ doctors, branches, departments, receptionists  }) {
     const { flash, errors: serverErrors, auth } = usePage().props;
     
     const [activeMenu, setActiveMenu] = useState("dashboard");
@@ -62,7 +63,7 @@ export default function Dashboard({ doctors, receptionists, branches, department
         return null;
     };
 
-    const validateForm = (type) => {
+    const validateForm = () => {
         const errors = {};
         
         const nameError = validateName(formData.name);
@@ -81,10 +82,8 @@ export default function Dashboard({ doctors, receptionists, branches, department
         const phoneError = validatePhone(formData.phone);
         if (phoneError) errors.phone = phoneError;
         
-        if (type === "doctor") {
-            const specializationError = validateSpecialization(formData.specialization);
-            if (specializationError) errors.specialization = specializationError;
-        }
+        const specializationError = validateSpecialization(formData.specialization);
+        if (specializationError) errors.specialization = specializationError;
         
         setValidationErrors(errors);
         return Object.keys(errors).length === 0;
@@ -104,7 +103,7 @@ export default function Dashboard({ doctors, receptionists, branches, department
     const handleAddDoctor = (e) => {
         e.preventDefault();
         
-        if (!validateForm("doctor")) return;
+        if (!validateForm()) return;
         
         const { password_confirmation, ...submitData } = formData;
         
@@ -127,31 +126,7 @@ export default function Dashboard({ doctors, receptionists, branches, department
         });
     };
 
-    const handleAddReceptionist = (e) => {
-        e.preventDefault();
-        
-        if (!validateForm("receptionist")) return;
-        
-        const { password_confirmation, specialization, ...submitData } = formData;
-        
-        router.post("/super-admin/receptionists", submitData, {
-            onSuccess: () => {
-                setFormData({
-                    name: "",
-                    email: "",
-                    password: "",
-                    password_confirmation: "",
-                    phone: "",
-                    specialization: "",
-                });
-                setValidationErrors({});
-                setActiveMenu("dashboard");
-            },
-            onError: (errors) => {
-                setValidationErrors(errors);
-            }
-        });
-    };
+    // Removed handleAddReceptionist function
 
     const handleDeleteUser = (id, type) => {
         const userType = type === 'doctor' ? 'Doctor' : 'Receptionist';
@@ -219,21 +194,7 @@ export default function Dashboard({ doctors, receptionists, branches, department
                         </button>
                     </li>
 
-                    <li>
-                        <button
-                            onClick={() => {
-                                setActiveMenu("receptionist");
-                                setValidationErrors({});
-                            }}
-                            className={`w-full text-left px-5 py-3 hover:bg-slate-700 ${
-                                activeMenu === "receptionist"
-                                    ? "bg-slate-700"
-                                    : ""
-                            }`}
-                        >
-                            Add Receptionist
-                        </button>
-                    </li>
+                    {/* Removed "Add Receptionist" menu item */}
 
                     <li>
                         <button
@@ -251,7 +212,6 @@ export default function Dashboard({ doctors, receptionists, branches, department
                         </button>
                     </li>
 
-                    {/* Add Department Management menu item */}
                     <li>
                         <button
                             onClick={() => {
@@ -265,6 +225,23 @@ export default function Dashboard({ doctors, receptionists, branches, department
                             }`}
                         >
                             Department Management
+                        </button>
+                    </li>
+
+
+                    <li>
+                        <button
+                            onClick={() => {
+                                setActiveMenu("receptionists");
+                                setValidationErrors({});
+                            }}
+                            className={`w-full text-left px-5 py-3 hover:bg-slate-700 ${
+                                activeMenu === "receptionists"
+                                    ? "bg-slate-700"
+                                    : ""
+                            }`}
+                        >
+                            Receptionist Management
                         </button>
                     </li>
                 </ul>
@@ -386,7 +363,7 @@ export default function Dashboard({ doctors, receptionists, branches, department
                                 <div className="bg-green-500 text-white p-6 rounded-lg shadow">
                                     <h3>Receptionists</h3>
                                     <p className="text-4xl font-bold">
-                                        {receptionists.length}
+                                        0
                                     </p>
                                 </div>
 
@@ -440,39 +417,7 @@ export default function Dashboard({ doctors, receptionists, branches, department
                                 )}
                             </div>
 
-                            {/* Receptionists */}
-                            <div className="bg-white rounded-lg shadow p-5">
-                                <h3 className="text-xl font-bold mb-4">
-                                    Receptionists
-                                </h3>
-                                
-                                {receptionists.length === 0 ? (
-                                    <p className="text-gray-500 text-center py-4">No receptionists added yet</p>
-                                ) : (
-                                    receptionists.map((item) => (
-                                        <div
-                                            key={item.id}
-                                            className="flex justify-between items-center border-b py-3"
-                                        >
-                                            <div>
-                                                <p className="font-semibold">{item.name}</p>
-                                                <p className="text-gray-500 text-sm">
-                                                    {item.email} • {item.phone || 'No phone'}
-                                                </p>
-                                            </div>
-
-                                            <button
-                                                onClick={() =>
-                                                    handleDeleteUser(item.id, 'receptionist')
-                                                }
-                                                className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
+                            {/* Removed Receptionists List Section */}
                         </>
                     )}
 
@@ -584,96 +529,7 @@ export default function Dashboard({ doctors, receptionists, branches, department
                         </div>
                     )}
 
-                    {/* Receptionist Form */}
-                    {activeMenu === "receptionist" && (
-                        <div className="bg-white p-6 rounded shadow">
-                            <h2 className="text-2xl font-bold mb-5">
-                                Add Receptionist
-                            </h2>
-
-                            <form
-                                onSubmit={handleAddReceptionist}
-                                className="space-y-4"
-                            >
-                                <div>
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        placeholder="Receptionist Name *"
-                                        value={formData.name}
-                                        onChange={handleInputChange}
-                                        className={`w-full border p-3 rounded ${
-                                            validationErrors.name || serverErrors?.name ? 'border-red-500' : 'border-gray-300'
-                                        }`}
-                                    />
-                                    {renderError('name')}
-                                </div>
-
-                                <div>
-                                    <input
-                                        type="email"
-                                        name="email"
-                                        placeholder="Email *"
-                                        value={formData.email}
-                                        onChange={handleInputChange}
-                                        className={`w-full border p-3 rounded ${
-                                            validationErrors.email || serverErrors?.email ? 'border-red-500' : 'border-gray-300'
-                                        }`}
-                                    />
-                                    {renderError('email')}
-                                </div>
-
-                                <div>
-                                    <input
-                                        type="password"
-                                        name="password"
-                                        placeholder="Password * (min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special)"
-                                        value={formData.password}
-                                        onChange={handleInputChange}
-                                        className={`w-full border p-3 rounded ${
-                                            validationErrors.password || serverErrors?.password ? 'border-red-500' : 'border-gray-300'
-                                        }`}
-                                    />
-                                    {renderError('password')}
-                                </div>
-
-                                <div>
-                                    <input
-                                        type="password"
-                                        name="password_confirmation"
-                                        placeholder="Confirm Password *"
-                                        value={formData.password_confirmation}
-                                        onChange={handleInputChange}
-                                        className={`w-full border p-3 rounded ${
-                                            validationErrors.password_confirmation ? 'border-red-500' : 'border-gray-300'
-                                        }`}
-                                    />
-                                    {renderError('password_confirmation')}
-                                </div>
-
-                                <div>
-                                    <input
-                                        type="text"
-                                        name="phone"
-                                        placeholder="Phone"
-                                        value={formData.phone}
-                                        onChange={handleInputChange}
-                                        className={`w-full border p-3 rounded ${
-                                            validationErrors.phone ? 'border-red-500' : 'border-gray-300'
-                                        }`}
-                                    />
-                                    {renderError('phone')}
-                                </div>
-
-                                <button 
-                                    type="submit"
-                                    className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition"
-                                >
-                                    Save Receptionist
-                                </button>
-                            </form>
-                        </div>
-                    )}
+                    {/* Removed Receptionist Form section */}
 
                     {/* Branch Management */}
                     {activeMenu === "branches" && (
@@ -687,6 +543,15 @@ export default function Dashboard({ doctors, receptionists, branches, department
                     {activeMenu === "departments" && (
                         <DepartmentManagement 
                             departments={departments || []} 
+                            branches={branches || []} 
+                        />
+                    )}
+
+
+                    {/* Receptionist Management */}
+                    {activeMenu === "receptionists" && (
+                        <ReceptionistManagement 
+                            receptionists={receptionists || { data: [] }} 
                             branches={branches || []} 
                         />
                     )}
