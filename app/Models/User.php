@@ -17,12 +17,11 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
-        // Role constants
+    // Role constants
     const ROLE_SUPER_ADMIN = 'super_admin';
     const ROLE_DOCTOR = 'doctor';
     const ROLE_RECEPTIONIST = 'receptionist';
     const ROLE_PATIENT = 'patient';
-
 
     /**
      * Get the attributes that should be cast.
@@ -36,6 +35,7 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
     // Helper methods
     public function isSuperAdmin(): bool
     {
@@ -55,5 +55,11 @@ class User extends Authenticatable
     public function isPatient(): bool
     {
         return $this->role === self::ROLE_PATIENT;
+    }
+
+    // Relationship with Doctor
+    public function doctor()
+    {
+        return $this->hasOne(Doctor::class);
     }
 }
