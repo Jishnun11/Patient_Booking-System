@@ -22,6 +22,8 @@ export default function DoctorManagement({ doctors: initialDoctors, branches, de
 
     // Track if it's the initial render
     const isInitialRender = useRef(true);
+    // Track if we should preserve state
+    const preserveStateRef = useRef(true);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -50,10 +52,16 @@ export default function DoctorManagement({ doctors: initialDoctors, branches, de
             ...(status && { status })
         });
         
-        router.get(`/super-admin/doctors?${params.toString()}`, {}, {
-            preserveState: true,
-            preserveScroll: true,
+        // CRITICAL FIX: Use router.reload() instead of router.get() for data-only updates
+        // This prevents page navigation and keeps the layout intact
+        router.reload({
             only: ['doctors', 'filters'],
+            preserveState: preserveStateRef.current,
+            preserveScroll: true,
+            data: {
+                search: search,
+                status: status
+            },
             onSuccess: (page) => {
                 const doctorsData = page.props.doctors;
                 if (Array.isArray(doctorsData)) {
@@ -167,6 +175,7 @@ export default function DoctorManagement({ doctors: initialDoctors, branches, de
         
         const method = isEditing ? 'put' : 'post';
 
+        // CRITICAL FIX: Always preserve state and scroll for form submissions too
         router[method](url, submitData, {
             preserveState: true,
             preserveScroll: true,
@@ -253,12 +262,16 @@ export default function DoctorManagement({ doctors: initialDoctors, branches, de
 
     const handleSearch = (e) => {
         e.preventDefault();
+        // Set preserveState to true for manual search
+        preserveStateRef.current = true;
         fetchDoctors(searchTerm, statusFilter);
     };
 
     const handleReset = () => {
         setSearchTerm("");
         setStatusFilter("");
+        // Set preserveState to true for reset
+        preserveStateRef.current = true;
         fetchDoctors("", "");
     };
 
@@ -665,16 +678,6 @@ export default function DoctorManagement({ doctors: initialDoctors, branches, de
                                                     >
                                                         Edit
                                                     </button>
-                                                    {/* <button
-                                                        onClick={() => handleToggleStatus(doctor)}
-                                                        className={`px-3 py-1 text-xs text-white rounded transition ${
-                                                            doctorData.is_active
-                                                                ? 'bg-yellow-500 hover:bg-yellow-600'
-                                                                : 'bg-green-500 hover:bg-green-600'
-                                                        }`}
-                                                    >
-                                                        {doctorData.is_active ? 'Deactivate' : 'Activate'}
-                                                    </button> */}
                                                     <button
                                                         onClick={() => handleDelete(doctorData.id, doctor.name || '')}
                                                         className="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition"
