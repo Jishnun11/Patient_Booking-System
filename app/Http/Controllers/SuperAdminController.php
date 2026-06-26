@@ -14,7 +14,7 @@ class SuperAdminController extends Controller
 {
     public function dashboard()
     {
-        $doctors = User::where('role', User::ROLE_DOCTOR)->get();
+        $doctors = User::where('role', User::ROLE_DOCTOR)->with('doctor')->get();
         $receptionists = User::where('role', User::ROLE_RECEPTIONIST)->get();
         $branches = Branch::with('departments')->orderBy('created_at', 'desc')->get();
         $departments = Department::where('is_active', true)->get();
@@ -25,26 +25,6 @@ class SuperAdminController extends Controller
             'branches' => $branches,
             'departments' => $departments,
         ]);
-    }
-
-    public function storeDoctor(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6',
-            'specialization' => 'nullable|string|max:255',
-            'phone' => 'nullable|string|max:20',
-        ]);
-
-        User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'role' => User::ROLE_DOCTOR,
-        ]);
-
-        return redirect()->back()->with('success', 'Doctor added successfully!');
     }
 
     public function storeReceptionist(Request $request)

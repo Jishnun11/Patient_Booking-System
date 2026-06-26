@@ -1,7 +1,8 @@
 import { router, usePage } from "@inertiajs/react";
 import { useState, useEffect } from "react";
 import BranchManagement from "./BranchManagement";
-import DepartmentManagement from "./DepartmentManagement"; 
+import DepartmentManagement from "./DepartmentManagement";
+import DoctorManagement from "./DoctorManagement"; // Import the DoctorManagement component
 
 export default function Dashboard({ doctors, receptionists, branches, departments }) {
     const { flash, errors: serverErrors, auth } = usePage().props;
@@ -16,7 +17,6 @@ export default function Dashboard({ doctors, receptionists, branches, department
         password: "",
         password_confirmation: "",
         phone: "",
-        specialization: "",
     });
 
     // Clear validation errors when form data changes
@@ -57,12 +57,7 @@ export default function Dashboard({ doctors, receptionists, branches, department
         return null;
     };
 
-    const validateSpecialization = (specialization) => {
-        if (activeMenu === "doctor" && !specialization) return "Specialization is required for doctors";
-        return null;
-    };
-
-    const validateForm = (type) => {
+    const validateForm = () => {
         const errors = {};
         
         const nameError = validateName(formData.name);
@@ -81,11 +76,6 @@ export default function Dashboard({ doctors, receptionists, branches, department
         const phoneError = validatePhone(formData.phone);
         if (phoneError) errors.phone = phoneError;
         
-        if (type === "doctor") {
-            const specializationError = validateSpecialization(formData.specialization);
-            if (specializationError) errors.specialization = specializationError;
-        }
-        
         setValidationErrors(errors);
         return Object.keys(errors).length === 0;
     };
@@ -101,38 +91,12 @@ export default function Dashboard({ doctors, receptionists, branches, department
         router.post("/logout");
     };
 
-    const handleAddDoctor = (e) => {
-        e.preventDefault();
-        
-        if (!validateForm("doctor")) return;
-        
-        const { password_confirmation, ...submitData } = formData;
-        
-        router.post("/super-admin/doctors", submitData, {
-            onSuccess: () => {
-                setFormData({
-                    name: "",
-                    email: "",
-                    password: "",
-                    password_confirmation: "",
-                    phone: "",
-                    specialization: "",
-                });
-                setValidationErrors({});
-                setActiveMenu("dashboard");
-            },
-            onError: (errors) => {
-                setValidationErrors(errors);
-            }
-        });
-    };
-
     const handleAddReceptionist = (e) => {
         e.preventDefault();
         
-        if (!validateForm("receptionist")) return;
+        if (!validateForm()) return;
         
-        const { password_confirmation, specialization, ...submitData } = formData;
+        const { password_confirmation, ...submitData } = formData;
         
         router.post("/super-admin/receptionists", submitData, {
             onSuccess: () => {
@@ -142,7 +106,6 @@ export default function Dashboard({ doctors, receptionists, branches, department
                     password: "",
                     password_confirmation: "",
                     phone: "",
-                    specialization: "",
                 });
                 setValidationErrors({});
                 setActiveMenu("dashboard");
@@ -168,7 +131,6 @@ export default function Dashboard({ doctors, receptionists, branches, department
         return null;
     };
 
-    // Get user initials for avatar
     const getUserInitials = () => {
         if (auth?.user?.name) {
             return auth.user.name.charAt(0).toUpperCase();
@@ -203,19 +165,20 @@ export default function Dashboard({ doctors, receptionists, branches, department
                         </button>
                     </li>
 
+                    {/* Doctor Management Menu Item */}
                     <li>
                         <button
                             onClick={() => {
-                                setActiveMenu("doctor");
+                                setActiveMenu("doctors");
                                 setValidationErrors({});
                             }}
                             className={`w-full text-left px-5 py-3 hover:bg-slate-700 ${
-                                activeMenu === "doctor"
+                                activeMenu === "doctors"
                                     ? "bg-slate-700"
                                     : ""
                             }`}
                         >
-                            Add Doctor
+                            Doctor Management
                         </button>
                     </li>
 
@@ -251,7 +214,6 @@ export default function Dashboard({ doctors, receptionists, branches, department
                         </button>
                     </li>
 
-                    {/* Add Department Management menu item */}
                     <li>
                         <button
                             onClick={() => {
@@ -375,30 +337,23 @@ export default function Dashboard({ doctors, receptionists, branches, department
                                 Dashboard
                             </h2>
 
-                            <div className="grid md:grid-cols-4 gap-5 mb-8">
+                            <div className="grid md:grid-cols-3 gap-5 mb-8">
                                 <div className="bg-blue-500 text-white p-6 rounded-lg shadow">
                                     <h3>Total Doctors</h3>
                                     <p className="text-4xl font-bold">
-                                        {doctors.length}
+                                        {doctors?.length || 0}
                                     </p>
                                 </div>
 
                                 <div className="bg-green-500 text-white p-6 rounded-lg shadow">
                                     <h3>Receptionists</h3>
                                     <p className="text-4xl font-bold">
-                                        {receptionists.length}
+                                        {receptionists?.length || 0}
                                     </p>
                                 </div>
 
                                 <div className="bg-yellow-500 text-white p-6 rounded-lg shadow">
                                     <h3>Patients</h3>
-                                    <p className="text-4xl font-bold">
-                                        0
-                                    </p>
-                                </div>
-
-                                <div className="bg-red-500 text-white p-6 rounded-lg shadow">
-                                    <h3>Appointments</h3>
                                     <p className="text-4xl font-bold">
                                         0
                                     </p>
@@ -411,7 +366,7 @@ export default function Dashboard({ doctors, receptionists, branches, department
                                     Doctors
                                 </h3>
                                 
-                                {doctors.length === 0 ? (
+                                {!doctors || doctors.length === 0 ? (
                                     <p className="text-gray-500 text-center py-4">No doctors added yet</p>
                                 ) : (
                                     doctors.map((doctor) => (
@@ -420,10 +375,10 @@ export default function Dashboard({ doctors, receptionists, branches, department
                                             className="flex justify-between items-center border-b py-3"
                                         >
                                             <div>
-                                                <p className="font-semibold">{doctor.name}</p>
+                                                <p className="font-semibold">Dr. {doctor.name}</p>
                                                 <p className="text-gray-500 text-sm">
-                                                    {doctor.email} • {doctor.phone || 'No phone'} 
-                                                    {doctor.specialization && ` • ${doctor.specialization}`}
+                                                    {doctor.email} • {doctor.doctor?.phone || 'No phone'} 
+                                                    {doctor.doctor?.specialization && ` • ${doctor.doctor.specialization}`}
                                                 </p>
                                             </div>
 
@@ -446,7 +401,7 @@ export default function Dashboard({ doctors, receptionists, branches, department
                                     Receptionists
                                 </h3>
                                 
-                                {receptionists.length === 0 ? (
+                                {!receptionists || receptionists.length === 0 ? (
                                     <p className="text-gray-500 text-center py-4">No receptionists added yet</p>
                                 ) : (
                                     receptionists.map((item) => (
@@ -476,113 +431,7 @@ export default function Dashboard({ doctors, receptionists, branches, department
                         </>
                     )}
 
-                    {/* Doctor Form */}
-                    {activeMenu === "doctor" && (
-                        <div className="bg-white p-6 rounded shadow">
-                            <h2 className="text-2xl font-bold mb-5">
-                                Add Doctor
-                            </h2>
 
-                            <form
-                                onSubmit={handleAddDoctor}
-                                className="space-y-4"
-                            >
-                                <div>
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        placeholder="Doctor Name *"
-                                        value={formData.name}
-                                        onChange={handleInputChange}
-                                        className={`w-full border p-3 rounded ${
-                                            validationErrors.name || serverErrors?.name ? 'border-red-500' : 'border-gray-300'
-                                        }`}
-                                    />
-                                    {renderError('name')}
-                                </div>
-
-                                <div>
-                                    <input
-                                        type="email"
-                                        name="email"
-                                        placeholder="Email *"
-                                        value={formData.email}
-                                        onChange={handleInputChange}
-                                        className={`w-full border p-3 rounded ${
-                                            validationErrors.email || serverErrors?.email ? 'border-red-500' : 'border-gray-300'
-                                        }`}
-                                    />
-                                    {renderError('email')}
-                                </div>
-
-                                <div>
-                                    <input
-                                        type="password"
-                                        name="password"
-                                        placeholder="Password * (min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special)"
-                                        value={formData.password}
-                                        onChange={handleInputChange}
-                                        className={`w-full border p-3 rounded ${
-                                            validationErrors.password || serverErrors?.password ? 'border-red-500' : 'border-gray-300'
-                                        }`}
-                                    />
-                                    {renderError('password')}
-                                    <p className="text-gray-500 text-xs mt-1">
-                                        Password must be at least 8 characters with uppercase, lowercase, number, and special character
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <input
-                                        type="password"
-                                        name="password_confirmation"
-                                        placeholder="Confirm Password *"
-                                        value={formData.password_confirmation}
-                                        onChange={handleInputChange}
-                                        className={`w-full border p-3 rounded ${
-                                            validationErrors.password_confirmation ? 'border-red-500' : 'border-gray-300'
-                                        }`}
-                                    />
-                                    {renderError('password_confirmation')}
-                                </div>
-
-                                <div>
-                                    <input
-                                        type="text"
-                                        name="phone"
-                                        placeholder="Phone"
-                                        value={formData.phone}
-                                        onChange={handleInputChange}
-                                        className={`w-full border p-3 rounded ${
-                                            validationErrors.phone ? 'border-red-500' : 'border-gray-300'
-                                        }`}
-                                    />
-                                    {renderError('phone')}
-                                </div>
-
-                                <div>
-                                    <input
-                                        type="text"
-                                        name="specialization"
-                                        placeholder="Specialization *"
-                                        value={formData.specialization}
-                                        onChange={handleInputChange}
-                                        className={`w-full border p-3 rounded ${
-                                            validationErrors.specialization ? 'border-red-500' : 'border-gray-300'
-                                        }`}
-                                    />
-                                    {renderError('specialization')}
-                                </div>
-
-                                <button 
-                                    type="submit"
-                                    className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition"
-                                >
-                                    Save Doctor
-                                </button>
-                            </form>
-                        </div>
-                    )}
 
                     {/* Receptionist Form */}
                     {activeMenu === "receptionist" && (
@@ -688,6 +537,14 @@ export default function Dashboard({ doctors, receptionists, branches, department
                         <DepartmentManagement 
                             departments={departments || []} 
                             branches={branches || []} 
+                        />
+                    )}
+                    {/* Doctor Management */}
+                    {activeMenu === "doctors" && (
+                        <DoctorManagement 
+                            doctors={{ data: doctors || [] }}  // Wrap in data property
+                            branches={branches || []} 
+                            departments={departments || []} 
                         />
                     )}
                 </main>
