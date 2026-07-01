@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
+use App\Models\Receptionist;
 use App\Models\Branch;
 use App\Models\Department;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +16,7 @@ class SuperAdminController extends Controller
     public function dashboard()
     {
         $doctors = User::where('role', User::ROLE_DOCTOR)->with('doctor')->get();
-        $receptionists = User::where('role', User::ROLE_RECEPTIONIST)->get();
+        $receptionists = Receptionist::with(['user', 'branch'])->get();
         $branches = Branch::with('departments')->orderBy('created_at', 'desc')->get();
         $departments = Department::where('is_active', true)->get();
 

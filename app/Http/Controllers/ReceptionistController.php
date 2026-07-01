@@ -3,81 +3,178 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Receptionist;
+use App\Models\Branch;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class ReceptionistController extends Controller
 {
-    public function dashboard()
+    /**
+     * Display a listing of receptionists with search and filter
+     */
+    public function index(Request $request)
     {
-        $doctors = User::where('role', User::ROLE_DOCTOR)->get();
+        $query = Receptionist::with(['user', 'branch']);
+
+        // Search functionality
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('user', function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('email', 'LIKE', "%{$search}%");
+            })->orWhere('phone', 'LIKE', "%{$search}%");
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            if ($request->status === 'active') {
+                $query->where('status', true);
+            } elseif ($request->status === 'inactive') {
+                $query->where('status', false);
+            }
+        }
+
+        $receptionists = $query->orderBy('created_at', 'desc')->paginate(10);
         
-        // Sample data - replace with actual database queries
-        $todayAppointments = [];
-        $pendingAppointments = [];
-        $patients = [];
-        
-        return Inertia::render('Receptionist/Dashboard', [
-            'doctors' => $doctors,
-            'todayAppointments' => $todayAppointments,
-            'pendingAppointments' => $pendingAppointments,
-            'patients' => $patients,
+        // Get branches for dropdown
+        $branches = Branch::where('status', true)->get();
+
+        return Inertia::render('SuperAdmin/ReceptionistManagement', [
+            'receptionists' => $receptionists,
+            'branches' => $branches,
+            'filters' => $request->only(['search', 'status']),
         ]);
     }
 
-    public function storePatient(Request $request)
+    /**
+     * Store a newly created receptionist
+     */
+    public function store(Request $request)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
             'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string',
+            'branch_id' => 'nullable|exists:branches,id',
+            'shift' => 'nullable|string|in:morning,evening,night',
+            'status' => 'boolean',
         ]);
 
+        // Create user
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'phone' => $validated['phone'] ?? null,
-            'address' => $validated['address'] ?? null,
-            'password' => Hash::make('password123'), // Default password
-            'role' => User::ROLE_PATIENT,
+            'password' => Hash::make($validated['password']),
+            'role' => User::ROLE_RECEPTIONIST,
         ]);
 
-        return redirect()->back()->with('success', 'Patient registered successfully!');
+        // Create receptionist profile
+        $receptionist = Receptionist::create([
+            'user_id' => $user->id,
+            'phone' => $validated['phone'] ?? null,
+            'branch_id' => $validated['branch_id'] ?? null,
+            'shift' => $validated['shift'] ?? null,
+            'status' => $validated['status'] ?? true,
+        ]);
+
+        return redirect()->back()->with('success', 'Receptionist added successfully!');
     }
 
-    public function storeAppointment(Request $request)
+    /**
+     * Update the specified receptionist
+     */
+    public function update(Request $request, Receptionist $receptionist)
     {
         $validated = $request->validate([
-            'patient_id' => 'required|exists:users,id',
-            'doctor_id' => 'required|exists:users,id',
-            'date' => 'required|date',
-            'time' => 'required',
-            'reason' => 'required|string',
+            'name' => 'required|string|max:255',
+            'email' => [
+                'required',
+                'email',
+                Rule::unique('users', 'email')->ignore($receptionist->user_id),
+            ],
+            'password' => 'nullable|string|min:8|confirmed',
+            'phone' => 'nullable|string|max:20',
+            'branch_id' => 'nullable|exists:branches,id',
+            'shift' => 'nullable|string|in:morning,evening,night',
+            'status' => 'boolean',
         ]);
 
-        // Create appointment logic here
-        // Appointment::create($validated);
+        // Update user
+        $userData = [
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+        ];
 
-        return redirect()->back()->with('success', 'Appointment scheduled successfully!');
-    }
+        if (!empty($validated['password'])) {
+            $userData['password'] = Hash::make($validated['password']);
+        }
 
-    public function updateAppointmentStatus($id, Request $request)
-    {
-        $request->validate([
-            'status' => 'required|in:scheduled,confirmed,completed,cancelled'
+        $receptionist->user->update($userData);
+
+        // Update receptionist profile
+        $receptionist->update([
+            'phone' => $validated['phone'] ?? null,
+            'branch_id' => $validated['branch_id'] ?? null,
+            'shift' => $validated['shift'] ?? null,
+            'status' => $validated['status'] ?? $receptionist->status,
         ]);
 
-        // Update appointment status logic here
-
-        return redirect()->back()->with('success', 'Appointment status updated!');
+        return redirect()->back()->with('success', 'Receptionist updated successfully!');
     }
 
-    public function destroyAppointment($id)
+    /**
+     * Toggle receptionist status (activate/deactivate)
+     */
+    public function toggleStatus(Receptionist $receptionist)
     {
-        // Delete appointment logic here
-        return redirect()->back()->with('success', 'Appointment cancelled successfully!');
+        $receptionist->update([
+            'status' => !$receptionist->status
+        ]);
+
+        $status = $receptionist->status ? 'activated' : 'deactivated';
+        return redirect()->back()->with('success', "Receptionist {$status} successfully!");
+    }
+
+    /**
+     * Remove the specified receptionist
+     */
+    public function destroy(Receptionist $receptionist)
+    {
+        $user = $receptionist->user;
+        $receptionist->delete();
+        $user->delete();
+
+        return redirect()->back()->with('success', 'Receptionist deleted successfully!');
+    }
+
+    /**
+     * Search receptionists (for API/autocomplete)
+     */
+    public function search(Request $request)
+    {
+        $search = $request->get('q');
+        $receptionists = Receptionist::with('user')
+            ->whereHas('user', function ($query) use ($search) {
+                $query->where('name', 'LIKE', "%{$search}%")
+                      ->orWhere('email', 'LIKE', "%{$search}%");
+            })
+            ->orWhere('phone', 'LIKE', "%{$search}%")
+            ->where('status', true)
+            ->limit(10)
+            ->get()
+            ->map(function ($receptionist) {
+                return [
+                    'id' => $receptionist->id,
+                    'name' => $receptionist->user->name,
+                    'email' => $receptionist->user->email,
+                    'phone' => $receptionist->phone,
+                ];
+            });
+
+        return response()->json($receptionists);
     }
 }

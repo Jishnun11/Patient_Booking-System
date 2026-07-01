@@ -5,17 +5,9 @@ export default function Dashboard({ doctors, todayAppointments, pendingAppointme
     const { flash, auth } = usePage().props;
     const [activeMenu, setActiveMenu] = useState("dashboard");
     const [isProfileOpen, setIsProfileOpen] = useState(false);
-    const [showAddPatient, setShowAddPatient] = useState(false);
     const [showAddAppointment, setShowAddAppointment] = useState(false);
 
     // Form states
-    const [patientForm, setPatientForm] = useState({
-        name: "",
-        email: "",
-        phone: "",
-        address: "",
-    });
-
     const [appointmentForm, setAppointmentForm] = useState({
         patient_id: "",
         doctor_id: "",
@@ -37,32 +29,12 @@ export default function Dashboard({ doctors, todayAppointments, pendingAppointme
     };
 
     const handleInputChange = (e, formType) => {
-        if (formType === "patient") {
-            setPatientForm({
-                ...patientForm,
-                [e.target.name]: e.target.value,
-            });
-        } else {
+        if (formType === "appointment") {
             setAppointmentForm({
                 ...appointmentForm,
                 [e.target.name]: e.target.value,
             });
         }
-    };
-
-    const handleAddPatient = (e) => {
-        e.preventDefault();
-        router.post("/receptionist/patients", patientForm, {
-            onSuccess: () => {
-                setShowAddPatient(false);
-                setPatientForm({
-                    name: "",
-                    email: "",
-                    phone: "",
-                    address: "",
-                });
-            },
-        });
     };
 
     const handleAddAppointment = (e) => {
@@ -293,12 +265,6 @@ export default function Dashboard({ doctors, todayAppointments, pendingAppointme
                                     <h3 className="text-xl font-bold mb-4">Quick Actions</h3>
                                     <div className="space-y-3">
                                         <button
-                                            onClick={() => setShowAddPatient(true)}
-                                            className="w-full bg-cyan-600 text-white px-4 py-2 rounded hover:bg-cyan-700 transition"
-                                        >
-                                            Register New Patient
-                                        </button>
-                                        <button
                                             onClick={() => setShowAddAppointment(true)}
                                             className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
                                         >
@@ -445,12 +411,6 @@ export default function Dashboard({ doctors, todayAppointments, pendingAppointme
                                 <h2 className="text-2xl font-bold">
                                     Patients
                                 </h2>
-                                <button
-                                    onClick={() => setShowAddPatient(true)}
-                                    className="bg-cyan-600 text-white px-4 py-2 rounded hover:bg-cyan-700 transition"
-                                >
-                                    + Register Patient
-                                </button>
                             </div>
                             
                             {patients?.length === 0 ? (
@@ -520,68 +480,6 @@ export default function Dashboard({ doctors, todayAppointments, pendingAppointme
                     )}
                 </main>
             </div>
-
-            {/* Add Patient Modal */}
-            {showAddPatient && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                        <h3 className="text-xl font-bold mb-4">Register New Patient</h3>
-                        <form onSubmit={handleAddPatient}>
-                            <div className="space-y-3">
-                                <input
-                                    type="text"
-                                    name="name"
-                                    placeholder="Full Name *"
-                                    value={patientForm.name}
-                                    onChange={(e) => handleInputChange(e, "patient")}
-                                    className="w-full border p-2 rounded"
-                                    required
-                                />
-                                <input
-                                    type="email"
-                                    name="email"
-                                    placeholder="Email *"
-                                    value={patientForm.email}
-                                    onChange={(e) => handleInputChange(e, "patient")}
-                                    className="w-full border p-2 rounded"
-                                    required
-                                />
-                                <input
-                                    type="text"
-                                    name="phone"
-                                    placeholder="Phone Number"
-                                    value={patientForm.phone}
-                                    onChange={(e) => handleInputChange(e, "patient")}
-                                    className="w-full border p-2 rounded"
-                                />
-                                <textarea
-                                    name="address"
-                                    placeholder="Address"
-                                    value={patientForm.address}
-                                    onChange={(e) => handleInputChange(e, "patient")}
-                                    className="w-full border p-2 rounded"
-                                    rows="2"
-                                />
-                            </div>
-                            <div className="flex justify-end space-x-2 mt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowAddPatient(false)}
-                                    className="px-4 py-2 border rounded hover:bg-gray-100"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 bg-cyan-600 text-white rounded hover:bg-cyan-700"
-                                >
-                                    Register
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
 
             {/* Add Appointment Modal */}
             {showAddAppointment && (

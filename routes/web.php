@@ -8,6 +8,7 @@ use App\Http\Controllers\SuperAdminController;
 use App\Http\Controllers\BranchController; 
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DoctorController;
+use App\Http\Controllers\ReceptionistController;
 
 Route::get('/', function () {
     return Inertia::render('Home');
@@ -50,8 +51,15 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('super-admin')->group(fu
     Route::delete('/doctors/{doctor}', [DoctorController::class, 'destroy'])->name('super-admin.doctors.destroy');
     Route::post('/doctors/{doctor}/toggle-status', [DoctorController::class, 'toggleStatus'])->name('super-admin.doctors.toggle-status');
     
+     // Receptionist Management Routes
+    Route::get('/receptionists', [ReceptionistController::class, 'index'])->name('super-admin.receptionists.index');
+    Route::get('/receptionists/search', [ReceptionistController::class, 'search'])->name('super-admin.receptionists.search');
+    Route::post('/receptionists', [ReceptionistController::class, 'store'])->name('super-admin.receptionists.store');
+    Route::put('/receptionists/{receptionist}', [ReceptionistController::class, 'update'])->name('super-admin.receptionists.update');
+    Route::delete('/receptionists/{receptionist}', [ReceptionistController::class, 'destroy'])->name('super-admin.receptionists.destroy');
+    Route::post('/receptionists/{receptionist}/toggle-status', [ReceptionistController::class, 'toggleStatus'])->name('super-admin.receptionists.toggle-status');
     // Receptionist routes
-    Route::post('/receptionists', [SuperAdminController::class, 'storeReceptionist'])->name('super-admin.receptionists.store');
+    // Route::post('/receptionists', [SuperAdminController::class, 'storeReceptionist'])->name('super-admin.receptionists.store');
     Route::delete('/users/{user}', [SuperAdminController::class, 'destroyUser'])->name('super-admin.users.destroy');
 
     // Branch routes
@@ -71,7 +79,15 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('super-admin')->group(fu
     Route::post('/departments/{department}/toggle-status', [DepartmentController::class, 'toggleStatus'])->name('super-admin.departments.toggle-status');
 });
 
+// Receptionist routes (for receptionist panel)
+Route::middleware(['auth', 'role:receptionist'])->prefix('receptionist')->group(function () {
+    Route::get('/dashboard', function () {
+        // You can either create a controller or use a simple Inertia render
+        return Inertia::render('Receptionist/Dashboard');})->name('receptionist.dashboard');
+});
 // Doctor routes (for doctor panel)
 Route::middleware(['auth', 'role:doctor'])->prefix('doctor')->group(function () {
-    Route::get('/dashboard', [App\Http\Controllers\DoctorDashboardController::class, 'dashboard'])->name('doctor.dashboard');
+    Route::get('/dashboard', function () {
+        // You can pass data here if needed
+        return Inertia::render('Doctor/Dashboard');})->name('doctor.dashboard');
 });

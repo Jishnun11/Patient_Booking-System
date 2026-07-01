@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import BranchManagement from "./BranchManagement";
 import DepartmentManagement from "./DepartmentManagement";
 import DoctorManagement from "./DoctorManagement"; // Import the DoctorManagement component
+import ReceptionistManagement from "./ReceptionistManagement";
 
 export default function Dashboard({ doctors, receptionists, branches, departments }) {
     const { flash, errors: serverErrors, auth } = usePage().props;
@@ -182,7 +183,7 @@ export default function Dashboard({ doctors, receptionists, branches, department
                         </button>
                     </li>
 
-                    <li>
+                    {/* <li>
                         <button
                             onClick={() => {
                                 setActiveMenu("receptionist");
@@ -195,6 +196,17 @@ export default function Dashboard({ doctors, receptionists, branches, department
                             }`}
                         >
                             Add Receptionist
+                        </button>
+                    </li> */}
+
+                    <li>
+                        <button
+                            onClick={() => setActiveMenu("receptionists")}
+                            className={`w-full text-left px-5 py-3 hover:bg-slate-700 ${
+                                activeMenu === "receptionists" ? "bg-slate-700" : ""
+                            }`}
+                        >
+                            Receptionist Management
                         </button>
                     </li>
 
@@ -382,6 +394,25 @@ export default function Dashboard({ doctors, receptionists, branches, department
                                                 </p>
                                             </div>
 
+                                        {/* Receptionists */}
+                                        <div className="bg-white rounded-lg shadow p-5">
+                                            <h3 className="text-xl font-bold mb-4">Receptionists</h3>
+                                            {!receptionists || receptionists.length === 0 ? (
+                                                <p className="text-gray-500 text-center py-4">No receptionists added yet</p>
+                                            ) : (
+                                                receptionists.map((item) => (
+                                                    <div key={item.id} className="flex justify-between items-center border-b py-3">
+                                                        <div>
+                                                            <p className="font-semibold">{item.name}</p>
+                                                            <p className="text-gray-500 text-sm">
+                                                                {item.email} • {item.phone || 'No phone'}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+
                                             <button
                                                 onClick={() =>
                                                     handleDeleteUser(doctor.id, 'doctor')
@@ -434,7 +465,7 @@ export default function Dashboard({ doctors, receptionists, branches, department
 
 
                     {/* Receptionist Form */}
-                    {activeMenu === "receptionist" && (
+                    {/* {activeMenu === "receptionist" && (
                         <div className="bg-white p-6 rounded shadow">
                             <h2 className="text-2xl font-bold mb-5">
                                 Add Receptionist
@@ -522,7 +553,7 @@ export default function Dashboard({ doctors, receptionists, branches, department
                                 </button>
                             </form>
                         </div>
-                    )}
+                    )} */}
 
                     {/* Branch Management */}
                     {activeMenu === "branches" && (
@@ -547,6 +578,14 @@ export default function Dashboard({ doctors, receptionists, branches, department
                             departments={departments || []} 
                         />
                     )}
+                    {/* Receptionist Management */}
+                    {activeMenu === "receptionists" && (
+                        <ReceptionistManagement 
+                            receptionists={receptionists || []}
+                            branches={branches || []}
+                        />
+                    )}
+
                 </main>
             </div>
         </div>
