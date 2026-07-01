@@ -79,7 +79,15 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('super-admin')->group(fu
     Route::post('/departments/{department}/toggle-status', [DepartmentController::class, 'toggleStatus'])->name('super-admin.departments.toggle-status');
 });
 
+// Receptionist routes (for receptionist panel)
+Route::middleware(['auth', 'role:receptionist'])->prefix('receptionist')->group(function () {
+    Route::get('/dashboard', function () {
+        // You can either create a controller or use a simple Inertia render
+        return Inertia::render('Receptionist/Dashboard');})->name('receptionist.dashboard');
+});
 // Doctor routes (for doctor panel)
 Route::middleware(['auth', 'role:doctor'])->prefix('doctor')->group(function () {
-    Route::get('/dashboard', [App\Http\Controllers\DoctorDashboardController::class, 'dashboard'])->name('doctor.dashboard');
+    Route::get('/dashboard', function () {
+        // You can pass data here if needed
+        return Inertia::render('Doctor/Dashboard');})->name('doctor.dashboard');
 });
