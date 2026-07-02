@@ -20,7 +20,7 @@ export default function PatientManagement({ patients: initialPatients, filters: 
     
     const [isLoading, setIsLoading] = useState(false);
     const isInitialRender = useRef(true);
-    const preserveStateRef = useRef(true);
+    const debounceTimer = useRef(null);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -43,42 +43,70 @@ export default function PatientManagement({ patients: initialPatients, filters: 
     }, [formData]);
 
     const fetchPatients = (search = searchTerm, status = statusFilter) => {
+        // Clear any pending debounce
+        if (debounceTimer.current) {
+            clearTimeout(debounceTimer.current);
+        }
+
         setIsLoading(true);
         
-        router.reload({
-            only: ['patients', 'filters'],
-            preserveState: preserveStateRef.current,
-            preserveScroll: true,
-            data: {
-                search: search,
-                status: status
-            },
-            onSuccess: (page) => {
-                const patientsData = page.props.patients;
-                if (Array.isArray(patientsData)) {
-                    setPatients(patientsData);
-                } else {
-                    setPatients(patientsData?.data || []);
+        // Build query parameters
+        const params = {};
+        if (search && search.trim() !== '') {
+            params.search = search.trim();
+        }
+        if (status && status.trim() !== '') {
+            params.status = status.trim();
+        }
+
+        // Use router.get with the correct URL
+        router.get(
+            '/receptionist/patients',
+            params,
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true, // This replaces the URL instead of pushing a new entry
+                only: ['patients', 'filters'],
+                onSuccess: (page) => {
+                    const patientsData = page.props.patients;
+                    if (Array.isArray(patientsData)) {
+                        setPatients(patientsData);
+                    } else {
+                        setPatients(patientsData?.data || []);
+                    }
+                    setIsLoading(false);
+                },
+                onError: (errors) => {
+                    console.error('Error fetching patients:', errors);
+                    setIsLoading(false);
                 }
-                setIsLoading(false);
-            },
-            onError: (errors) => {
-                console.error('Error fetching patients:', errors);
-                setIsLoading(false);
             }
-        });
+        );
     };
 
+    // Handle search with debounce
     useEffect(() => {
         if (isInitialRender.current) {
             isInitialRender.current = false;
             return;
         }
         
-        const timer = setTimeout(() => {
+        // Clear previous timer
+        if (debounceTimer.current) {
+            clearTimeout(debounceTimer.current);
+        }
+
+        // Set new timer
+        debounceTimer.current = setTimeout(() => {
             fetchPatients(searchTerm, statusFilter);
         }, 500);
-        return () => clearTimeout(timer);
+
+        return () => {
+            if (debounceTimer.current) {
+                clearTimeout(debounceTimer.current);
+            }
+        };
     }, [searchTerm, statusFilter]);
 
     const validateForm = () => {
@@ -146,12 +174,9 @@ export default function PatientManagement({ patients: initialPatients, filters: 
             submitData.patient_code = generatePatientCode();
         }
 
-        // const url = isEditing
-        //     ? `/receptionist/patients/${editingId}`
-        //     : '/receptionist/patients';
         const url = isEditing
-                ? `/receptionist/patients/${editingId}`
-                : '/receptionist/patients';
+            ? `/receptionist/patients/${editingId}`
+            : '/receptionist/patients';
                     
         const method = isEditing ? 'put' : 'post';
 
@@ -167,6 +192,8 @@ export default function PatientManagement({ patients: initialPatients, filters: 
                 } else {
                     setPatients(patientsData?.data || []);
                 }
+                // Refresh the search results after successful operation
+                fetchPatients(searchTerm, statusFilter);
             },
             onError: (errors) => {
                 setValidationErrors(errors);
@@ -196,7 +223,6 @@ export default function PatientManagement({ patients: initialPatients, filters: 
 
     const handleDelete = (id, name) => {
         if (confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) {
-            // router.delete(`/receptionist/patients/${id}`, {
             router.delete(`/receptionist/patients/${id}`, {
                 preserveState: true,
                 preserveScroll: true,
@@ -208,6 +234,8 @@ export default function PatientManagement({ patients: initialPatients, filters: 
                     } else {
                         setPatients(patientsData?.data || []);
                     }
+                    // Refresh the search results after successful operation
+                    fetchPatients(searchTerm, statusFilter);
                 }
             });
         }
@@ -216,8 +244,7 @@ export default function PatientManagement({ patients: initialPatients, filters: 
     const handleToggleStatus = (patient) => {
         const action = patient.status === 'active' ? 'deactivate' : 'activate';
         if (confirm(`Are you sure you want to ${action} ${patient.name}?`)) {
-            // router.post(`/receptionist/patients/${patient.id}/toggle-status`, {}, {
-            router.post(`/receptionist/patients/${patient.id}/toggle-status`, {},{
+            router.post(`/receptionist/patients/${patient.id}/toggle-status`, {}, {
                 preserveState: true,
                 preserveScroll: true,
                 only: ['flash', 'patients'],
@@ -228,21 +255,17 @@ export default function PatientManagement({ patients: initialPatients, filters: 
                     } else {
                         setPatients(patientsData?.data || []);
                     }
+                    // Refresh the search results after successful operation
+                    fetchPatients(searchTerm, statusFilter);
                 }
             });
         }
     };
 
-    const handleSearch = (e) => {
-        e.preventDefault();
-        preserveStateRef.current = true;
-        fetchPatients(searchTerm, statusFilter);
-    };
-
     const handleReset = () => {
         setSearchTerm("");
         setStatusFilter("");
-        preserveStateRef.current = true;
+        // Immediately fetch with empty values
         fetchPatients("", "");
     };
 
@@ -328,7 +351,7 @@ export default function PatientManagement({ patients: initialPatients, filters: 
 
             {/* Search & Filter Bar */}
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                <form onSubmit={handleSearch} className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-3">
                     <input
                         type="text"
                         placeholder="Search by name, code, phone, or place..."
@@ -348,19 +371,13 @@ export default function PatientManagement({ patients: initialPatients, filters: 
                         <option value="archived">Archived</option>
                     </select>
                     <button
-                        type="submit"
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition"
-                    >
-                        Search
-                    </button>
-                    <button
                         type="button"
                         onClick={handleReset}
                         className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition"
                     >
                         Reset
                     </button>
-                </form>
+                </div>
             </div>
 
             {/* Patient Form */}
@@ -639,7 +656,7 @@ export default function PatientManagement({ patients: initialPatients, filters: 
                                     </td>
                                 </tr>
                             ) : (
-                                patients.map((patient, index) => (
+                                patients.map((patient) => (
                                     <tr key={patient.id} className="hover:bg-gray-50 transition">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className="text-sm font-mono bg-gray-100 px-2 py-1 rounded">
@@ -682,30 +699,12 @@ export default function PatientManagement({ patients: initialPatients, filters: 
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex space-x-2">
-                                                {/* <button
-                                                    onClick={() => {
-                                                        alert(`Patient Details:\nName: ${patient.name}\nPhone: ${patient.phone}\nEmail: ${patient.email}\nStatus: ${patient.status}`);
-                                                    }}
-                                                    className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition"
-                                                >
-                                                    View
-                                                </button> */}
                                                 <button
                                                     onClick={() => handleEdit(patient)}
                                                     className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition"
                                                 >
                                                     Edit
                                                 </button>
-                                                {/* <button
-                                                    onClick={() => handleToggleStatus(patient)}
-                                                    className={`px-3 py-1 text-xs text-white rounded transition ${
-                                                        patient.status === 'active' 
-                                                            ? 'bg-yellow-500 hover:bg-yellow-600' 
-                                                            : 'bg-green-500 hover:bg-green-600'
-                                                    }`}
-                                                >
-                                                    {patient.status === 'active' ? 'Deactivate' : 'Activate'}
-                                                </button> */}
                                                 <button
                                                     onClick={() => handleDelete(patient.id, patient.name)}
                                                     className="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition"

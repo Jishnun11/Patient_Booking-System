@@ -32,16 +32,16 @@ class PatientController extends Controller
         $patients = $query->latest()->get();
         
         // Get other data for dashboard
-        $doctors = \App\Models\Doctor::all();
-        $todayAppointments = \App\Models\Appointment::whereDate('date', today())->get();
-        $pendingAppointments = \App\Models\Appointment::where('status', 'pending')->get();
+        // $doctors = \App\Models\Doctor::all();
+        // $todayAppointments = \App\Models\Appointment::whereDate('date', today())->get();
+        // $pendingAppointments = \App\Models\Appointment::where('status', 'pending')->get();
         
         // If the request is from Inertia
         return Inertia::render('Receptionist/Dashboard', [
             'patients' => $patients,
-            'doctors' => $doctors,
-            'todayAppointments' => $todayAppointments,
-            'pendingAppointments' => $pendingAppointments,
+            // 'doctors' => $doctors,
+            // 'todayAppointments' => $todayAppointments,
+            // 'pendingAppointments' => $pendingAppointments,
             'filters' => [
                 'search' => $request->search ?? '',
                 'status' => $request->status ?? ''
