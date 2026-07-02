@@ -17,6 +17,7 @@ class CreatePatientsTable extends Migration
             $table->string('email')->nullable();
             $table->text('address')->nullable();
             $table->enum('gender', ['male', 'female', 'other'])->nullable();
+            $table->enum('blood_group', ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'])->nullable(); // Add this line
             $table->integer('age')->nullable();
             $table->string('place')->nullable();
             $table->date('date_of_birth')->nullable();

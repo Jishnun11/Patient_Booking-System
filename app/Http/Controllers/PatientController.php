@@ -31,17 +31,8 @@ class PatientController extends Controller
         
         $patients = $query->latest()->get();
         
-        // Get other data for dashboard
-        // $doctors = \App\Models\Doctor::all();
-        // $todayAppointments = \App\Models\Appointment::whereDate('date', today())->get();
-        // $pendingAppointments = \App\Models\Appointment::where('status', 'pending')->get();
-        
-        // If the request is from Inertia
         return Inertia::render('Receptionist/Dashboard', [
             'patients' => $patients,
-            // 'doctors' => $doctors,
-            // 'todayAppointments' => $todayAppointments,
-            // 'pendingAppointments' => $pendingAppointments,
             'filters' => [
                 'search' => $request->search ?? '',
                 'status' => $request->status ?? ''
@@ -54,9 +45,10 @@ class PatientController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
-            'email' => 'nullable|email|max:255',
+            'email' => 'required|email|max:255',
             'address' => 'nullable|string',
             'gender' => 'nullable|in:male,female,other',
+            'blood_group' => 'required|in:A+,A-,B+,B-,AB+,AB-,O+,O-', // Add this validation
             'age' => 'nullable|integer|min:0|max:150',
             'patient_code' => 'nullable|string|unique:patients',
             'place' => 'nullable|string|max:255',
@@ -77,7 +69,6 @@ class PatientController extends Controller
 
         $patient = Patient::create($request->all());
         
-        // Return back with success message for Inertia
         return redirect()->back()->with('success', 'Patient registered successfully!');
     }
 
@@ -89,6 +80,7 @@ class PatientController extends Controller
             'email' => 'nullable|email|max:255',
             'address' => 'nullable|string',
             'gender' => 'nullable|in:male,female,other',
+            'blood_group' => 'nullable|in:A+,A-,B+,B-,AB+,AB-,O+,O-', // Add this validation
             'age' => 'nullable|integer|min:0|max:150',
             'patient_code' => 'nullable|string|unique:patients,patient_code,' . $id,
             'place' => 'nullable|string|max:255',

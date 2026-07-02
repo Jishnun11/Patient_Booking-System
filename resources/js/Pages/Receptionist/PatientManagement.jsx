@@ -28,6 +28,7 @@ export default function PatientManagement({ patients: initialPatients, filters: 
         email: '',
         address: '',
         gender: '',
+        blood_group: '', // Add this
         age: '',
         patient_code: '',
         place: '',
@@ -43,14 +44,12 @@ export default function PatientManagement({ patients: initialPatients, filters: 
     }, [formData]);
 
     const fetchPatients = (search = searchTerm, status = statusFilter) => {
-        // Clear any pending debounce
         if (debounceTimer.current) {
             clearTimeout(debounceTimer.current);
         }
 
         setIsLoading(true);
         
-        // Build query parameters
         const params = {};
         if (search && search.trim() !== '') {
             params.search = search.trim();
@@ -59,14 +58,13 @@ export default function PatientManagement({ patients: initialPatients, filters: 
             params.status = status.trim();
         }
 
-        // Use router.get with the correct URL
         router.get(
             '/receptionist/patients',
             params,
             {
                 preserveState: true,
                 preserveScroll: true,
-                replace: true, // This replaces the URL instead of pushing a new entry
+                replace: true,
                 only: ['patients', 'filters'],
                 onSuccess: (page) => {
                     const patientsData = page.props.patients;
@@ -85,19 +83,16 @@ export default function PatientManagement({ patients: initialPatients, filters: 
         );
     };
 
-    // Handle search with debounce
     useEffect(() => {
         if (isInitialRender.current) {
             isInitialRender.current = false;
             return;
         }
         
-        // Clear previous timer
         if (debounceTimer.current) {
             clearTimeout(debounceTimer.current);
         }
 
-        // Set new timer
         debounceTimer.current = setTimeout(() => {
             fetchPatients(searchTerm, statusFilter);
         }, 500);
@@ -123,6 +118,14 @@ export default function PatientManagement({ patients: initialPatients, filters: 
         if (formData.age && (parseInt(formData.age) < 0 || parseInt(formData.age) > 150)) {
             errors.age = "Age must be between 0 and 150";
         }
+
+        // Blood group validation (optional but if provided must be valid)
+        if (formData.blood_group) {
+            const validBloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+            if (!validBloodGroups.includes(formData.blood_group)) {
+                errors.blood_group = "Please select a valid blood group";
+            }
+        }
         
         setValidationErrors(errors);
         return Object.keys(errors).length === 0;
@@ -143,6 +146,7 @@ export default function PatientManagement({ patients: initialPatients, filters: 
             email: '',
             address: '',
             gender: '',
+            blood_group: '', // Add this
             age: '',
             patient_code: '',
             place: '',
@@ -192,7 +196,6 @@ export default function PatientManagement({ patients: initialPatients, filters: 
                 } else {
                     setPatients(patientsData?.data || []);
                 }
-                // Refresh the search results after successful operation
                 fetchPatients(searchTerm, statusFilter);
             },
             onError: (errors) => {
@@ -208,6 +211,7 @@ export default function PatientManagement({ patients: initialPatients, filters: 
             email: patient.email || '',
             address: patient.address || '',
             gender: patient.gender || '',
+            blood_group: patient.blood_group || '', // Add this
             age: patient.age || '',
             patient_code: patient.patient_code || '',
             place: patient.place || '',
@@ -234,7 +238,6 @@ export default function PatientManagement({ patients: initialPatients, filters: 
                     } else {
                         setPatients(patientsData?.data || []);
                     }
-                    // Refresh the search results after successful operation
                     fetchPatients(searchTerm, statusFilter);
                 }
             });
@@ -255,7 +258,6 @@ export default function PatientManagement({ patients: initialPatients, filters: 
                     } else {
                         setPatients(patientsData?.data || []);
                     }
-                    // Refresh the search results after successful operation
                     fetchPatients(searchTerm, statusFilter);
                 }
             });
@@ -265,7 +267,6 @@ export default function PatientManagement({ patients: initialPatients, filters: 
     const handleReset = () => {
         setSearchTerm("");
         setStatusFilter("");
-        // Immediately fetch with empty values
         fetchPatients("", "");
     };
 
@@ -334,6 +335,7 @@ export default function PatientManagement({ patients: initialPatients, filters: 
                                 email: '',
                                 address: '',
                                 gender: '',
+                                blood_group: '', // Add this
                                 age: '',
                                 patient_code: '',
                                 place: '',
@@ -493,6 +495,35 @@ export default function PatientManagement({ patients: initialPatients, filters: 
                                     <option value="female">Female</option>
                                     <option value="other">Other</option>
                                 </select>
+                                {renderError('gender')}
+                            </div>
+
+                            {/* Add Blood Group Field */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Blood Group
+                                </label>
+                                <select
+                                    name="blood_group"
+                                    value={formData.blood_group}
+                                    onChange={handleInputChange}
+                                    className={`w-full border ${
+                                        validationErrors.blood_group || serverErrors?.blood_group
+                                            ? 'border-red-500'
+                                            : 'border-gray-300'
+                                    } px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent`}
+                                >
+                                    <option value="">Select Blood Group</option>
+                                    <option value="A+">A+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="B+">B+</option>
+                                    <option value="B-">B-</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="AB-">AB-</option>
+                                    <option value="O+">O+</option>
+                                    <option value="O-">O-</option>
+                                </select>
+                                {renderError('blood_group')}
                             </div>
 
                             <div>
@@ -629,6 +660,9 @@ export default function PatientManagement({ patients: initialPatients, filters: 
                                     GENDER/AGE
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                                    BLOOD GROUP
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
                                     PLACE
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -642,7 +676,7 @@ export default function PatientManagement({ patients: initialPatients, filters: 
                         <tbody className="bg-white divide-y divide-gray-200">
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
                                         <div className="flex justify-center items-center space-x-2">
                                             <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-700"></div>
                                             <span>Loading...</span>
@@ -651,7 +685,7 @@ export default function PatientManagement({ patients: initialPatients, filters: 
                                 </tr>
                             ) : patients.length === 0 ? (
                                 <tr>
-                                    <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                                    <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
                                         No patients found
                                     </td>
                                 </tr>
@@ -683,6 +717,11 @@ export default function PatientManagement({ patients: initialPatients, filters: 
                                             <div className="text-sm text-gray-500">
                                                 {patient.age || 'N/A'} years
                                             </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
+                                            <span className="text-sm font-medium text-gray-700">
+                                                {patient.blood_group || 'N/A'}
+                                            </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap hidden lg:table-cell">
                                             <div className="text-sm text-gray-700">
