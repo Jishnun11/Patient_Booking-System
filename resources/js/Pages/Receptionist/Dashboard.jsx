@@ -1,7 +1,9 @@
+// resources/js/Pages/Receptionist/Dashboard.jsx
 import { router, usePage } from "@inertiajs/react";
 import { useState } from "react";
+import PatientManagement from "./PatientManagement";
 
-export default function Dashboard({ doctors, todayAppointments, pendingAppointments, patients }) {
+export default function Dashboard({ doctors, todayAppointments, pendingAppointments, patients: initialPatients, filters }) {
     const { flash, auth } = usePage().props;
     const [activeMenu, setActiveMenu] = useState("dashboard");
     const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -62,6 +64,9 @@ export default function Dashboard({ doctors, todayAppointments, pendingAppointme
             router.delete(`/receptionist/appointments/${id}`);
         }
     };
+
+    // Get patients array
+    const patients = Array.isArray(initialPatients) ? initialPatients : (initialPatients?.data || []);
 
     return (
         <div className="flex min-h-screen bg-gray-100">
@@ -407,36 +412,10 @@ export default function Dashboard({ doctors, todayAppointments, pendingAppointme
                     {/* Patients View */}
                     {activeMenu === "patients" && (
                         <div className="bg-white rounded-lg shadow p-5">
-                            <div className="flex justify-between items-center mb-5">
-                                <h2 className="text-2xl font-bold">
-                                    Patients
-                                </h2>
-                            </div>
-                            
-                            {patients?.length === 0 ? (
-                                <p className="text-gray-500 text-center py-4">No patients registered</p>
-                            ) : (
-                                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {patients?.map((patient) => (
-                                        <div key={patient.id} className="border rounded-lg p-4 hover:shadow-lg transition">
-                                            <div className="flex items-center justify-between mb-3">
-                                                <div className="w-12 h-12 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-700 font-bold text-lg">
-                                                    {patient.name.charAt(0).toUpperCase()}
-                                                </div>
-                                                <button className="text-cyan-600 text-sm hover:underline">
-                                                    View Details
-                                                </button>
-                                            </div>
-                                            <h3 className="font-semibold text-lg">{patient.name}</h3>
-                                            <p className="text-gray-500 text-sm">{patient.email}</p>
-                                            <p className="text-gray-500 text-sm">{patient.phone || 'No phone'}</p>
-                                            {patient.address && (
-                                                <p className="text-gray-500 text-sm mt-1">{patient.address}</p>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                            <PatientManagement 
+                                patients={patients} 
+                                filters={filters || {}} 
+                            />
                         </div>
                     )}
 

@@ -9,6 +9,7 @@ use App\Http\Controllers\BranchController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\ReceptionistController;
+use App\Http\Controllers\PatientController;
 
 Route::get('/', function () {
     return Inertia::render('Home');
@@ -79,12 +80,53 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('super-admin')->group(fu
     Route::post('/departments/{department}/toggle-status', [DepartmentController::class, 'toggleStatus'])->name('super-admin.departments.toggle-status');
 });
 
-// Receptionist routes (for receptionist panel)
+// // Receptionist routes (for receptionist panel)
+// Route::middleware(['auth', 'role:receptionist'])->prefix('receptionist')->group(function () {
+//     Route::get('/dashboard', function () {
+//         // You can either create a controller or use a simple Inertia render
+//         return Inertia::render('Receptionist/Dashboard');})->name('receptionist.dashboard');
+
+//         // Patient routes - make sure these are correctly defined
+//     Route::get('/patients', [App\Http\Controllers\PatientController::class, 'index']);
+//     Route::post('/patients', [App\Http\Controllers\PatientController::class, 'store']);
+//     Route::get('/patients/{id}', [App\Http\Controllers\PatientController::class, 'show']);
+//     Route::put('/patients/{id}', [App\Http\Controllers\PatientController::class, 'update']);
+//     Route::delete('/patients/{id}', [App\Http\Controllers\PatientController::class, 'destroy']);
+// });
+
+// In your receptionist routes group
+// Route::middleware(['auth', 'role:receptionist'])->prefix('receptionist')->group(function () {
+//     Route::get('/dashboard', function () {
+//         return Inertia::render('Receptionist/Dashboard');
+//     })->name('receptionist.dashboard');
 Route::middleware(['auth', 'role:receptionist'])->prefix('receptionist')->group(function () {
     Route::get('/dashboard', function () {
-        // You can either create a controller or use a simple Inertia render
-        return Inertia::render('Receptionist/Dashboard');})->name('receptionist.dashboard');
+        // Fetch all necessary data
+        $patients = \App\Models\Patient::latest()->get();
+        // $doctors = \App\Models\Doctor::all();
+        // $todayAppointments = \App\Models\Appointment::whereDate('date', today())->get();
+        // $pendingAppointments = \App\Models\Appointment::where('status', 'pending')->get();
+        
+        return Inertia::render('Receptionist/Dashboard', [
+            'patients' => $patients,
+            // 'doctors' => $doctors,
+            // 'todayAppointments' => $todayAppointments,
+            // 'pendingAppointments' => $pendingAppointments,
+            'filters' => [
+                'search' => '',
+                'status' => ''
+            ]
+        ]);
+    })->name('receptionist.dashboard');
+       // Patient routes
+    Route::get('/patients', [PatientController::class, 'index'])->name('receptionist.patients.index');
+    Route::post('/patients', [PatientController::class, 'store'])->name('receptionist.patients.store');
+    Route::get('/patients/{id}', [PatientController::class, 'show'])->name('receptionist.patients.show');
+    Route::put('/patients/{id}', [PatientController::class, 'update'])->name('receptionist.patients.update');
+    Route::delete('/patients/{id}', [PatientController::class, 'destroy'])->name('receptionist.patients.destroy');
+    Route::post('/patients/{id}/toggle-status', [PatientController::class, 'toggleStatus'])->name('receptionist.patients.toggle-status');
 });
+
 // Doctor routes (for doctor panel)
 Route::middleware(['auth', 'role:doctor'])->prefix('doctor')->group(function () {
     Route::get('/dashboard', function () {
