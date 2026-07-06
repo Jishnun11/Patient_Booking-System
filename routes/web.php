@@ -10,6 +10,7 @@ use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\ReceptionistController;
 use App\Http\Controllers\PatientController;
+use App\Http\Controllers\AppointmentController;
 
 Route::get('/', function () {
     return Inertia::render('Home');
@@ -94,37 +95,71 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('super-admin')->group(fu
 //     Route::delete('/patients/{id}', [App\Http\Controllers\PatientController::class, 'destroy']);
 // });
 
-// In your receptionist routes group
-// Route::middleware(['auth', 'role:receptionist'])->prefix('receptionist')->group(function () {
-//     Route::get('/dashboard', function () {
-//         return Inertia::render('Receptionist/Dashboard');
-//     })->name('receptionist.dashboard');
+// Receptionist routes
 Route::middleware(['auth', 'role:receptionist'])->prefix('receptionist')->group(function () {
+    // Dashboard Route with all necessary data
     Route::get('/dashboard', function () {
         // Fetch all necessary data
         $patients = \App\Models\Patient::latest()->get();
-        // $doctors = \App\Models\Doctor::all();
-        // $todayAppointments = \App\Models\Appointment::whereDate('date', today())->get();
-        // $pendingAppointments = \App\Models\Appointment::where('status', 'pending')->get();
+        $doctors = \App\Models\Doctor::with('user:id,name')->where('is_active', true)->get();
+        $todayAppointments = \App\Models\Appointment::whereDate('date', today())->get();
+        $pendingAppointments = \App\Models\Appointment::where('status', 'scheduled')->count();
+        
+        // Fetch initial appointments for the appointment management page
+        $appointments = \App\Models\Appointment::with(['patient', 'doctor.user'])
+            ->orderBy('date', 'desc')
+            ->orderBy('time', 'desc')
+            ->paginate(10)
+            ->through(function ($appointment) {
+                return [
+                    'id' => $appointment->id,
+                    'patient_id' => $appointment->patient_id,
+                    'patient_name' => $appointment->patient->name ?? 'Unknown',
+                    'patient_code' => $appointment->patient->patient_code ?? 'N/A',
+                    'patient_phone' => $appointment->patient->phone ?? 'N/A',
+                    'doctor_id' => $appointment->doctor_id,
+                    'doctor_name' => $appointment->doctor->user->name ?? 'Unknown',
+                    'doctor_specialization' => $appointment->doctor->specialization ?? 'General',
+                    'date' => $appointment->date->format('Y-m-d'),
+                    'time' => $appointment->time instanceof \DateTime ? $appointment->time->format('H:i') : date('H:i', strtotime($appointment->time)),
+                    'status' => $appointment->status,
+                    'reason' => $appointment->reason,
+                    'notes' => $appointment->notes,
+                    'cancellation_reason' => $appointment->cancellation_reason,
+                ];
+            });
         
         return Inertia::render('Receptionist/Dashboard', [
             'patients' => $patients,
-            // 'doctors' => $doctors,
-            // 'todayAppointments' => $todayAppointments,
-            // 'pendingAppointments' => $pendingAppointments,
+            'doctors' => $doctors,
+            'todayAppointments' => $todayAppointments,
+            'pendingAppointments' => $pendingAppointments,
+            'appointments' => $appointments,
             'filters' => [
                 'search' => '',
                 'status' => ''
             ]
         ]);
     })->name('receptionist.dashboard');
-       // Patient routes
+
+    // Patient routes
     Route::get('/patients', [PatientController::class, 'index'])->name('receptionist.patients.index');
     Route::post('/patients', [PatientController::class, 'store'])->name('receptionist.patients.store');
     Route::get('/patients/{id}', [PatientController::class, 'show'])->name('receptionist.patients.show');
     Route::put('/patients/{id}', [PatientController::class, 'update'])->name('receptionist.patients.update');
     Route::delete('/patients/{id}', [PatientController::class, 'destroy'])->name('receptionist.patients.destroy');
     Route::post('/patients/{id}/toggle-status', [PatientController::class, 'toggleStatus'])->name('receptionist.patients.toggle-status');
+
+    // Appointment routes
+    Route::get('/appointments', [AppointmentController::class, 'index'])->name('receptionist.appointments.index');
+    Route::get('/appointments/create', [AppointmentController::class, 'create'])->name('receptionist.appointments.create');
+    Route::get('/appointments/available-slots', [AppointmentController::class, 'getDoctorAvailableSlots'])->name('receptionist.appointments.available-slots');
+    Route::post('/appointments', [AppointmentController::class, 'store'])->name('receptionist.appointments.store');
+    Route::get('/appointments/{appointment}/edit', [AppointmentController::class, 'edit'])->name('receptionist.appointments.edit');
+    Route::put('/appointments/{appointment}', [AppointmentController::class, 'update'])->name('receptionist.appointments.update');
+    Route::put('/appointments/{appointment}/status', [AppointmentController::class, 'updateStatus'])->name('receptionist.appointments.status');
+    Route::delete('/appointments/{appointment}', [AppointmentController::class, 'destroy'])->name('receptionist.appointments.destroy');
+    Route::post('/appointments/check-availability', [AppointmentController::class, 'checkDoctorAvailability'])->name('receptionist.appointments.check-availability');
 });
 
 // Doctor routes (for doctor panel)
