@@ -1,28 +1,47 @@
 // resources/js/Pages/Receptionist/Dashboard.jsx
 import { router, usePage } from "@inertiajs/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PatientManagement from "./PatientManagement";
+import AppointmentManagement from "./AppointmentManagement";
 
-export default function Dashboard({ doctors, todayAppointments, pendingAppointments, patients: initialPatients, filters }) {
+export default function Dashboard({ 
+    doctors, 
+    todayAppointments, 
+    pendingAppointments, 
+    patients: initialPatients, 
+    appointments: initialAppointments,
+    filters 
+}) {
     const { flash, auth } = usePage().props;
     const [activeMenu, setActiveMenu] = useState("dashboard");
     const [isProfileOpen, setIsProfileOpen] = useState(false);
-    const [showAddAppointment, setShowAddAppointment] = useState(false);
+    const [patients, setPatients] = useState([]);
+    const [appointments, setAppointments] = useState([]);
 
-    // Form states
-    const [appointmentForm, setAppointmentForm] = useState({
-        patient_id: "",
-        doctor_id: "",
-        date: "",
-        time: "",
-        reason: "",
-    });
+    useEffect(() => {
+        // Set patients data
+        if (Array.isArray(initialPatients)) {
+            setPatients(initialPatients);
+        } else if (initialPatients?.data) {
+            setPatients(initialPatients.data);
+        } else {
+            setPatients([]);
+        }
+
+        // Set appointments data
+        if (Array.isArray(initialAppointments)) {
+            setAppointments(initialAppointments);
+        } else if (initialAppointments?.data) {
+            setAppointments(initialAppointments.data);
+        } else {
+            setAppointments([]);
+        }
+    }, [initialPatients, initialAppointments]);
 
     const handleLogout = () => {
         router.post("/logout");
     };
 
-    // Get user initials for avatar
     const getUserInitials = () => {
         if (auth?.user?.name) {
             return auth.user.name.charAt(0).toUpperCase();
@@ -30,48 +49,19 @@ export default function Dashboard({ doctors, todayAppointments, pendingAppointme
         return "R";
     };
 
-    const handleInputChange = (e, formType) => {
-        if (formType === "appointment") {
-            setAppointmentForm({
-                ...appointmentForm,
-                [e.target.name]: e.target.value,
-            });
-        }
+    // Just set the active menu without router navigation
+    const navigateToAppointments = () => {
+        setActiveMenu("appointments");
     };
 
-    const handleAddAppointment = (e) => {
-        e.preventDefault();
-        router.post("/receptionist/appointments", appointmentForm, {
-            onSuccess: () => {
-                setShowAddAppointment(false);
-                setAppointmentForm({
-                    patient_id: "",
-                    doctor_id: "",
-                    date: "",
-                    time: "",
-                    reason: "",
-                });
-            },
-        });
+    const navigateToPatients = () => {
+        setActiveMenu("patients");
     };
-
-    const handleUpdateAppointmentStatus = (id, status) => {
-        router.put(`/receptionist/appointments/${id}`, { status });
-    };
-
-    const handleDeleteAppointment = (id) => {
-        if (confirm("Are you sure you want to cancel this appointment?")) {
-            router.delete(`/receptionist/appointments/${id}`);
-        }
-    };
-
-    // Get patients array
-    const patients = Array.isArray(initialPatients) ? initialPatients : (initialPatients?.data || []);
 
     return (
         <div className="flex min-h-screen bg-gray-100">
-            {/* Sidebar */}
-            <aside className="w-64 bg-slate-900 text-white fixed h-full">
+            {/* Sidebar - Always visible */}
+            <aside className="w-64 bg-slate-900 text-white fixed h-full overflow-y-auto z-30">
                 <div className="p-5 border-b border-slate-700">
                     <h1 className="text-2xl font-bold">
                         Hospital System
@@ -85,44 +75,64 @@ export default function Dashboard({ doctors, todayAppointments, pendingAppointme
                     <li>
                         <button
                             onClick={() => setActiveMenu("dashboard")}
-                            className={`w-full text-left px-5 py-3 hover:bg-slate-700 ${
+                            className={`w-full text-left px-5 py-3 hover:bg-slate-700 transition ${
                                 activeMenu === "dashboard" ? "bg-slate-700" : ""
                             }`}
                         >
-                            Dashboard
+                            <div className="flex items-center space-x-3">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                                </svg>
+                                <span>Dashboard</span>
+                            </div>
                         </button>
                     </li>
 
                     <li>
                         <button
-                            onClick={() => setActiveMenu("appointments")}
-                            className={`w-full text-left px-5 py-3 hover:bg-slate-700 ${
-                                activeMenu === "appointments" ? "bg-slate-700" : ""
-                            }`}
-                        >
-                            Appointments
-                        </button>
-                    </li>
-
-                    <li>
-                        <button
-                            onClick={() => setActiveMenu("patients")}
-                            className={`w-full text-left px-5 py-3 hover:bg-slate-700 ${
+                            onClick={navigateToPatients}
+                            className={`w-full text-left px-5 py-3 hover:bg-slate-700 transition ${
                                 activeMenu === "patients" ? "bg-slate-700" : ""
                             }`}
                         >
-                            Patients
+                            <div className="flex items-center space-x-3">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                                <span>Patients</span>
+                            </div>
                         </button>
                     </li>
 
                     <li>
                         <button
                             onClick={() => setActiveMenu("doctors")}
-                            className={`w-full text-left px-5 py-3 hover:bg-slate-700 ${
+                            className={`w-full text-left px-5 py-3 hover:bg-slate-700 transition ${
                                 activeMenu === "doctors" ? "bg-slate-700" : ""
                             }`}
                         >
-                            Doctors
+                            <div className="flex items-center space-x-3">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                <span>Doctors</span>
+                            </div>
+                        </button>
+                    </li>
+
+                    <li>
+                        <button
+                            onClick={navigateToAppointments}
+                            className={`w-full text-left px-5 py-3 hover:bg-slate-700 transition ${
+                                activeMenu === "appointments" ? "bg-slate-700" : ""
+                            }`}
+                        >
+                            <div className="flex items-center space-x-3">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span>Appointments</span>
+                            </div>
                         </button>
                     </li>
                 </ul>
@@ -131,13 +141,13 @@ export default function Dashboard({ doctors, todayAppointments, pendingAppointme
             {/* Main Content Area */}
             <div className="flex-1 ml-64">
                 {/* Top Navigation Bar with Profile */}
-                <nav className="bg-white shadow-sm border-b border-gray-200">
+                <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-20">
                     <div className="px-6 py-3 flex justify-end items-center">
                         {/* Profile Dropdown */}
                         <div className="relative">
                             <button
                                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                className="flex items-center space-x-3 focus:outline-none"
+                                className="flex items-center space-x-3 focus:outline-none hover:bg-gray-50 px-3 py-2 rounded-lg transition"
                             >
                                 <div className="w-10 h-10 rounded-full bg-cyan-700 flex items-center justify-center text-white font-semibold">
                                     {getUserInitials()}
@@ -167,7 +177,7 @@ export default function Dashboard({ doctors, todayAppointments, pendingAppointme
                                         className="fixed inset-0 z-10" 
                                         onClick={() => setIsProfileOpen(false)}
                                     ></div>
-                                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
+                                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-30">
                                         <div className="p-4 border-b border-gray-200">
                                             <p className="font-medium text-gray-800">{auth?.user?.name}</p>
                                             <p className="text-sm text-gray-500 mt-1">{auth?.user?.email}</p>
@@ -179,7 +189,7 @@ export default function Dashboard({ doctors, todayAppointments, pendingAppointme
                                                     setIsProfileOpen(false);
                                                     router.visit('/change-password');
                                                 }}
-                                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
                                             >
                                                 <div className="flex items-center space-x-3">
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -196,7 +206,7 @@ export default function Dashboard({ doctors, todayAppointments, pendingAppointme
                                                     setIsProfileOpen(false);
                                                     handleLogout();
                                                 }}
-                                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 transition"
                                             >
                                                 <div className="flex items-center space-x-3">
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -216,13 +226,13 @@ export default function Dashboard({ doctors, todayAppointments, pendingAppointme
                 {/* Main Content */}
                 <main className="p-6">
                     {flash?.success && (
-                        <div className="bg-green-100 text-green-700 p-3 rounded mb-4">
+                        <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded mb-4">
                             {flash.success}
                         </div>
                     )}
 
                     {flash?.error && (
-                        <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
+                        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded mb-4">
                             {flash.error}
                         </div>
                     )}
@@ -230,100 +240,81 @@ export default function Dashboard({ doctors, todayAppointments, pendingAppointme
                     {/* Dashboard View */}
                     {activeMenu === "dashboard" && (
                         <>
-                            <h2 className="text-3xl font-bold mb-6">
+                            <h2 className="text-3xl font-bold mb-6 text-gray-800">
                                 Receptionist Dashboard
                             </h2>
 
-                            <div className="grid md:grid-cols-4 gap-5 mb-8">
-                                <div className="bg-blue-500 text-white p-6 rounded-lg shadow">
-                                    <h3>Today's Appointments</h3>
-                                    <p className="text-4xl font-bold">
-                                        {todayAppointments?.length || 0}
-                                    </p>
-                                </div>
-
-                                <div className="bg-yellow-500 text-white p-6 rounded-lg shadow">
-                                    <h3>Pending Appointments</h3>
-                                    <p className="text-4xl font-bold">
-                                        {pendingAppointments?.length || 0}
-                                    </p>
-                                </div>
-
-                                <div className="bg-green-500 text-white p-6 rounded-lg shadow">
-                                    <h3>Total Patients</h3>
-                                    <p className="text-4xl font-bold">
+                            <div className="grid md:grid-cols-3 gap-5 mb-8">
+                                <div className="bg-blue-500 text-white p-6 rounded-lg shadow-lg hover:shadow-xl transition">
+                                    <h3 className="text-sm font-medium opacity-90">Total Patients</h3>
+                                    <p className="text-4xl font-bold mt-2">
                                         {patients?.length || 0}
                                     </p>
                                 </div>
 
-                                <div className="bg-purple-500 text-white p-6 rounded-lg shadow">
-                                    <h3>Total Doctors</h3>
-                                    <p className="text-4xl font-bold">
+                                <div className="bg-green-500 text-white p-6 rounded-lg shadow-lg hover:shadow-xl transition">
+                                    <h3 className="text-sm font-medium opacity-90">Total Doctors</h3>
+                                    <p className="text-4xl font-bold mt-2">
                                         {doctors?.length || 0}
+                                    </p>
+                                </div>
+
+                                <div className="bg-purple-500 text-white p-6 rounded-lg shadow-lg hover:shadow-xl transition">
+                                    <h3 className="text-sm font-medium opacity-90">Pending Appointments</h3>
+                                    <p className="text-4xl font-bold mt-2">
+                                        {pendingAppointments?.length || 0}
                                     </p>
                                 </div>
                             </div>
 
                             {/* Quick Actions */}
-                            <div className="grid md:grid-cols-2 gap-6 mb-8">
-                                <div className="bg-white rounded-lg shadow p-6">
-                                    <h3 className="text-xl font-bold mb-4">Quick Actions</h3>
-                                    <div className="space-y-3">
-                                        <button
-                                            onClick={() => setShowAddAppointment(true)}
-                                            className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-                                        >
-                                            Schedule Appointment
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div className="bg-white rounded-lg shadow p-6">
-                                    <h3 className="text-xl font-bold mb-4">Today's Schedule</h3>
-                                    {todayAppointments?.length === 0 ? (
-                                        <p className="text-gray-500 text-center py-4">No appointments today</p>
-                                    ) : (
-                                        <div className="space-y-2">
-                                            {todayAppointments?.slice(0, 3).map((appointment) => (
-                                                <div key={appointment.id} className="border-b pb-2">
-                                                    <p className="font-semibold">{appointment.patient_name}</p>
-                                                    <p className="text-sm text-gray-500">
-                                                        {appointment.time} - Dr. {appointment.doctor_name}
-                                                    </p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
+                            <div className="bg-white rounded-lg shadow p-6 mb-8">
+                                <h3 className="text-xl font-bold mb-4 text-gray-800">Quick Actions</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <button
+                                        onClick={navigateToPatients}
+                                        className="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition font-medium"
+                                    >
+                                        Manage Patients
+                                    </button>
+                                    <button
+                                        onClick={navigateToAppointments}
+                                        className="bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition font-medium"
+                                    >
+                                        Manage Appointments
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveMenu("doctors")}
+                                        className="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition font-medium"
+                                    >
+                                        View Doctors
+                                    </button>
                                 </div>
                             </div>
 
-                            {/* Recent Appointments */}
+                            {/* Recent Patients */}
                             <div className="bg-white rounded-lg shadow p-5">
-                                <h3 className="text-xl font-bold mb-4">
-                                    Recent Appointments
+                                <h3 className="text-xl font-bold mb-4 text-gray-800">
+                                    Recent Patients
                                 </h3>
                                 
-                                {todayAppointments?.length === 0 ? (
-                                    <p className="text-gray-500 text-center py-4">No recent appointments</p>
+                                {patients?.length === 0 ? (
+                                    <p className="text-gray-500 text-center py-4">No patients registered</p>
                                 ) : (
                                     <div className="space-y-3">
-                                        {todayAppointments?.slice(0, 5).map((appointment) => (
+                                        {patients?.slice(0, 5).map((patient) => (
                                             <div
-                                                key={appointment.id}
-                                                className="flex justify-between items-center border-b py-3"
+                                                key={patient.id}
+                                                className="flex justify-between items-center border-b py-3 hover:bg-gray-50 px-3 rounded transition"
                                             >
                                                 <div>
-                                                    <p className="font-semibold">{appointment.patient_name}</p>
+                                                    <p className="font-semibold text-gray-800">{patient.name}</p>
                                                     <p className="text-gray-500 text-sm">
-                                                        {appointment.time} • Dr. {appointment.doctor_name} • {appointment.reason}
+                                                        {patient.email} • {patient.phone || 'No phone'}
                                                     </p>
                                                 </div>
-                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                                    appointment.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                                    appointment.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                                                    'bg-yellow-100 text-yellow-700'
-                                                }`}>
-                                                    {appointment.status || 'Scheduled'}
+                                                <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full">
+                                                    Patient
                                                 </span>
                                             </div>
                                         ))}
@@ -331,82 +322,6 @@ export default function Dashboard({ doctors, todayAppointments, pendingAppointme
                                 )}
                             </div>
                         </>
-                    )}
-
-                    {/* Appointments View */}
-                    {activeMenu === "appointments" && (
-                        <div className="bg-white rounded-lg shadow p-5">
-                            <div className="flex justify-between items-center mb-5">
-                                <h2 className="text-2xl font-bold">
-                                    All Appointments
-                                </h2>
-                                <button
-                                    onClick={() => setShowAddAppointment(true)}
-                                    className="bg-cyan-600 text-white px-4 py-2 rounded hover:bg-cyan-700 transition"
-                                >
-                                    + New Appointment
-                                </button>
-                            </div>
-                            
-                            {todayAppointments?.length === 0 ? (
-                                <p className="text-gray-500 text-center py-4">No appointments found</p>
-                            ) : (
-                                <div className="overflow-x-auto">
-                                    <table className="min-w-full">
-                                        <thead className="bg-gray-50">
-                                            <tr>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doctor</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
-                                            {todayAppointments?.map((appointment) => (
-                                                <tr key={appointment.id}>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="font-medium text-gray-900">{appointment.patient_name}</div>
-                                                        <div className="text-sm text-gray-500">{appointment.patient_phone}</div>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        Dr. {appointment.doctor_name}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {appointment.date} <br/>
-                                                        {appointment.time}
-                                                    </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-500">
-                                                        {appointment.reason}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <select 
-                                                            value={appointment.status || 'scheduled'}
-                                                            className="text-sm border rounded px-2 py-1"
-                                                            onChange={(e) => handleUpdateAppointmentStatus(appointment.id, e.target.value)}
-                                                        >
-                                                            <option value="scheduled">Scheduled</option>
-                                                            <option value="confirmed">Confirmed</option>
-                                                            <option value="completed">Completed</option>
-                                                            <option value="cancelled">Cancelled</option>
-                                                        </select>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                        <button
-                                                            onClick={() => handleDeleteAppointment(appointment.id)}
-                                                            className="text-red-600 hover:text-red-900"
-                                                        >
-                                                            Cancel
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </div>
                     )}
 
                     {/* Patients View */}
@@ -419,10 +334,22 @@ export default function Dashboard({ doctors, todayAppointments, pendingAppointme
                         </div>
                     )}
 
+                    {/* Appointments View */}
+                    {activeMenu === "appointments" && (
+                        <div className="bg-white rounded-lg shadow p-5">
+                            <AppointmentManagement 
+                                appointments={initialAppointments || []} 
+                                patients={patients || []}
+                                doctors={doctors || []}
+                                filters={filters || {}}
+                            />
+                        </div>
+                    )}
+
                     {/* Doctors View */}
                     {activeMenu === "doctors" && (
                         <div className="bg-white rounded-lg shadow p-5">
-                            <h2 className="text-2xl font-bold mb-5">
+                            <h2 className="text-2xl font-bold mb-5 text-gray-800">
                                 Doctors
                             </h2>
                             
@@ -434,13 +361,13 @@ export default function Dashboard({ doctors, todayAppointments, pendingAppointme
                                         <div key={doctor.id} className="border rounded-lg p-4 hover:shadow-lg transition">
                                             <div className="flex items-center justify-between mb-3">
                                                 <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-lg">
-                                                    {doctor.name.charAt(0).toUpperCase()}
+                                                    {doctor.name?.charAt(0).toUpperCase() || 'D'}
                                                 </div>
-                                                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                                                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
                                                     Available
                                                 </span>
                                             </div>
-                                            <h3 className="font-semibold text-lg">Dr. {doctor.name}</h3>
+                                            <h3 className="font-semibold text-lg text-gray-800">Dr. {doctor.name}</h3>
                                             <p className="text-gray-500 text-sm">{doctor.email}</p>
                                             <p className="text-gray-500 text-sm">{doctor.phone || 'No phone'}</p>
                                             {doctor.specialization && (
@@ -448,9 +375,6 @@ export default function Dashboard({ doctors, todayAppointments, pendingAppointme
                                                     {doctor.specialization}
                                                 </p>
                                             )}
-                                            <button className="mt-3 w-full bg-cyan-600 text-white px-3 py-1 rounded text-sm hover:bg-cyan-700 transition">
-                                                Schedule Appointment
-                                            </button>
                                         </div>
                                     ))}
                                 </div>
@@ -459,87 +383,6 @@ export default function Dashboard({ doctors, todayAppointments, pendingAppointme
                     )}
                 </main>
             </div>
-
-            {/* Add Appointment Modal */}
-            {showAddAppointment && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                        <h3 className="text-xl font-bold mb-4">Schedule Appointment</h3>
-                        <form onSubmit={handleAddAppointment}>
-                            <div className="space-y-3">
-                                <select
-                                    name="patient_id"
-                                    value={appointmentForm.patient_id}
-                                    onChange={(e) => handleInputChange(e, "appointment")}
-                                    className="w-full border p-2 rounded"
-                                    required
-                                >
-                                    <option value="">Select Patient</option>
-                                    {patients?.map((patient) => (
-                                        <option key={patient.id} value={patient.id}>
-                                            {patient.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <select
-                                    name="doctor_id"
-                                    value={appointmentForm.doctor_id}
-                                    onChange={(e) => handleInputChange(e, "appointment")}
-                                    className="w-full border p-2 rounded"
-                                    required
-                                >
-                                    <option value="">Select Doctor</option>
-                                    {doctors?.map((doctor) => (
-                                        <option key={doctor.id} value={doctor.id}>
-                                            Dr. {doctor.name} - {doctor.specialization}
-                                        </option>
-                                    ))}
-                                </select>
-                                <input
-                                    type="date"
-                                    name="date"
-                                    value={appointmentForm.date}
-                                    onChange={(e) => handleInputChange(e, "appointment")}
-                                    className="w-full border p-2 rounded"
-                                    required
-                                />
-                                <input
-                                    type="time"
-                                    name="time"
-                                    value={appointmentForm.time}
-                                    onChange={(e) => handleInputChange(e, "appointment")}
-                                    className="w-full border p-2 rounded"
-                                    required
-                                />
-                                <textarea
-                                    name="reason"
-                                    placeholder="Reason for visit"
-                                    value={appointmentForm.reason}
-                                    onChange={(e) => handleInputChange(e, "appointment")}
-                                    className="w-full border p-2 rounded"
-                                    rows="2"
-                                    required
-                                />
-                            </div>
-                            <div className="flex justify-end space-x-2 mt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowAddAppointment(false)}
-                                    className="px-4 py-2 border rounded hover:bg-gray-100"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 bg-cyan-600 text-white rounded hover:bg-cyan-700"
-                                >
-                                    Schedule
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
