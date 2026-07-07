@@ -11,6 +11,7 @@ use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\ReceptionistController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\AppointmentController;
+use App\Http\Controllers\Receptionist\PatientReportController; 
 
 Route::get('/', function () {
     return Inertia::render('Home');
@@ -160,6 +161,10 @@ Route::middleware(['auth', 'role:receptionist'])->prefix('receptionist')->group(
     Route::put('/appointments/{appointment}/status', [AppointmentController::class, 'updateStatus'])->name('receptionist.appointments.status');
     Route::delete('/appointments/{appointment}', [AppointmentController::class, 'destroy'])->name('receptionist.appointments.destroy');
     Route::post('/appointments/check-availability', [AppointmentController::class, 'checkDoctorAvailability'])->name('receptionist.appointments.check-availability');
+
+    Route::get('/patient-reports', [PatientReportController::class, 'index'])->name('receptionist.patient-reports');
+    Route::get('/patient-reports/export', [PatientReportController::class, 'export'])->name('receptionist.patient-reports.export');
+    Route::get('/patient-reports/export-pdf', [PatientReportController::class, 'exportPdf'])->name('receptionist.patient-reports.export-pdf');
 });
 
 // Doctor routes (for doctor panel)
